@@ -422,7 +422,7 @@ a.link { color: var(--rose); font-weight: 500; }
 <script>
 (() => {
   "use strict";
-  const APP_VERSION = "2.1 (synchroniseren via Google Drive)";
+  const APP_VERSION = "2.2 (bestaande instellingen blijven bij aanmelden)";
   const $ = s => document.querySelector(s);
   const viewEl = $("#view"), bannerEl = $("#banner");
 
@@ -490,7 +490,7 @@ a.link { color: var(--rose); font-weight: 500; }
 
   /* ---------- State ---------- */
   const DEFAULT_CFG = () => ({
-    schedules: [{ from: "2000-01-01", days: [0, 456, 456, 220, 456, 456, 0] }], // zondag eerst
+    schedules: [{ from: "2000-01-01", days: [0, 456, 456, 228, 456, 456, 0] }], // zondag eerst
     pauseDefault: 30, pauseAfter: 360, fullDay: 456, extraHolidayMin: 412,
     startDate: todayStr(), startBalance: 0, rights: {}
   });
@@ -576,7 +576,7 @@ a.link { color: var(--rose); font-weight: 500; }
     return { balance: bal, months };
   }
   const weekMinutes = date => sum(scheduleFor(date).days, x => x || 0);
-  // "ma, di, do en vr 7u36 · wo 3u40": a schedule in words, for the explanations.
+  // "ma, di, do en vr 7u36 · wo 3u48": a schedule in words, for the explanations.
   function schedText(days) {
     const groups = new Map();
     [1, 2, 3, 4, 5, 6, 0].forEach(d => { const m = days[d] || 0; if (!m) return; if (!groups.has(m)) groups.set(m, []); groups.get(m).push(DSHORT[d]); });
@@ -974,7 +974,7 @@ a.link { color: var(--rose); font-weight: 500; }
   /* ---------- First start: your own regime ---------- */
   const PRESETS = [
     { label: "Voltijds", days: [0, 456, 456, 456, 456, 456, 0], extra: 456 },
-    { label: "90% (wo-namiddag vrij)", days: [0, 456, 456, 220, 456, 456, 0], extra: 412 },
+    { label: "90% (wo-namiddag vrij)", days: [0, 456, 456, 228, 456, 456, 0], extra: 412 },
     { label: "80% (woensdag vrij)", days: [0, 456, 456, 0, 456, 456, 0], extra: 365 },
     { label: "50% (ma, di, wo-vm)", days: [0, 456, 456, 228, 0, 0, 0], extra: 228 }
   ];
@@ -1025,7 +1025,7 @@ a.link { color: var(--rose); font-weight: 500; }
       const extraDays = f.elements.extraDays.checked;
       if (!extraDays) for (const h of state.hol.filter(h => /^e/.test(h.id))) await del("hol", h.id);
       await saveCfg({ ...DEFAULT_CFG(), schedules: [{ from: "2000-01-01", days: ds }], fullDay: Math.max(...ds), extraHolidayMin: extra,
-        pauseDefault: isNaN(pause) || pause < 0 ? 30 : pause, startDate: f.elements.start.value, startBalance: bal, extraDays });
+        pauseDefault: isNaN(pause) || pause < 0 ? 30 : pause, startDate: f.elements.start.value, startBalance: bal, extraDays }, true);
       try { if (!localStorage.getItem(BACKUP_KEY)) localStorage.setItem(BACKUP_KEY, String(Date.now())); } catch (e) {}
       toast(CLIENT_ID && !cloudOn() ? "Klaar! Gebruik je ook een ander toestel? Meld je aan bij Instellingen." : "Klaar! Prik in of registreer je eerste dag"); route("vandaag");
     };
@@ -1035,6 +1035,7 @@ a.link { color: var(--rose); font-weight: 500; }
   const ORDER = [1, 2, 3, 4, 5, 6, 0];
   function renderSettings() {
     const c = cfg(), Y = state.year;
+    state.cfgShown = state.cfg ? state.cfg.updated || "" : "";
     const scheds = c.schedules.slice().sort((a, b) => a.from < b.from ? -1 : 1);
     const schedHtml = scheds.map((s, n) => {
       const tot = sum(s.days, x => x || 0);
@@ -1323,7 +1324,7 @@ a.link { color: var(--rose); font-weight: 500; }
     };
     const upd = () => {
       const p = plan(), pr = $("#planPreview");
-      if (!p) { pr.textContent = "Typ de uren als 7u36 of 3:40."; return; }
+      if (!p) { pr.textContent = "Typ de uren als 7u36 of 3:48."; return; }
       const week = Array.from({ length: 7 }, (_, k) => addDays(mon, k));
       const was = sum(week, plannedMin), will = sum(week, d => d in p ? p[d] : plannedMin(d));
       pr.innerHTML = Object.keys(p).sort().map(d => `${DSHORT[dow(d)]} ${fmtShort(d)}: <b>${hm(p[d])}</b>${p[d] === baseMin(d) ? " (zoals je rooster)" : ""}`).join("<br>")
@@ -1603,7 +1604,13 @@ a.link { color: var(--rose); font-weight: 500; }
   /* ---------- Saving ---------- */
   async function save(coll, id, body) { state.db.set(coll, id, body); }
   async function del(coll, id) { state.db.del(coll, id); }
-  async function saveCfg(c) { state.db.set("config", "main", { ...c, updated: new Date().toISOString() }); }
+  // fresh = made on the start screen of a new device. When that device later connects to Google
+  // Drive, the settings already in Drive win over these defaults (see mergeRemote).
+  async function saveCfg(c, fresh) {
+    const body = { ...c, updated: new Date().toISOString() };
+    if (fresh && WEB) body.fresh = true; else delete body.fresh;
+    state.db.set("config", "main", body);
+  }
 
   /* ---------- Google Sheet storage ---------- */
   const hasGas = () => !!(window.google && google.script && google.script.run);
@@ -1662,7 +1669,9 @@ a.link { color: var(--rose); font-weight: 500; }
       new Set([...Object.keys(ld), ...Object.keys(rd)]).forEach(k => {
         const L = ld[k], R = rd[k];
         if (!R) { upload = true; return; }
-        if (L && (L.t || 0) >= (R.t || 0)) { if ((L.t || 0) > (R.t || 0) || !!L.del !== !!R.del || JSON.stringify(L.body) !== JSON.stringify(R.body)) upload = true; return; }
+        // Start-screen settings of a new device never replace real settings that are already in Drive.
+        const freshOverReal = L && !L.del && L.body && L.body.fresh && !R.del && JSON.stringify(L.body) !== JSON.stringify(R.body);
+        if (L && !freshOverReal && (L.t || 0) >= (R.t || 0)) { if ((L.t || 0) > (R.t || 0) || !!L.del !== !!R.del || JSON.stringify(L.body) !== JSON.stringify(R.body)) upload = true; return; }
         const i = k.indexOf("/"), c = k.slice(0, i), id = k.slice(i + 1);
         if (!data[c]) return;
         if (R.del) { if (data[c].has(id)) { data[c].delete(id); localChanged = true; } tomb[k] = R.t; delete meta[k]; }
@@ -1916,8 +1925,10 @@ a.link { color: var(--rose); font-weight: 500; }
   function onData(snap) {
     state.reg = snap.reg; state.abs = snap.abs; state.hol = snap.hol; state.cfg = snap.cfg; state.loaded = true;
     reindex();
-    // Settings hold half-typed values; they re-render only after their own save.
-    if (state.view !== "instellingen" || !viewEl.querySelector("#schedForm")) render();
+    // Settings hold half-typed values; they re-render only after their own save,
+    // or when the settings themselves changed (e.g. arrived from another device).
+    const cfgStamp = snap.cfg ? snap.cfg.updated || "" : "";
+    if (state.view !== "instellingen" || !viewEl.querySelector("#schedForm") || cfgStamp !== state.cfgShown) render();
     else renderBanner();
     if (sheetMode && sheetMode.kind === "day") openDay(sheetMode.date);
   }
