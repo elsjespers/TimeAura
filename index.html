@@ -426,7 +426,7 @@ a.link { color: var(--rose); font-weight: 500; }
 <script>
 (() => {
   "use strict";
-  const APP_VERSION = "2.4 (halve dag verplaatsen via de kalender)";
+  const APP_VERSION = "2.5 (halve dag verplaatsen telt de uren over)";
   const $ = s => document.querySelector(s);
   const viewEl = $("#view"), bannerEl = $("#banner");
 
@@ -1307,7 +1307,7 @@ a.link { color: var(--rose); font-weight: 500; }
     showSheet(`${sheetHead("Werktijd van deze dag", fmtDate(date), `<button type="button" class="btn small ghost" data-back-day="${date}">‹ Dag</button>`)}
       <form id="planForm" class="stack" novalidate>
         <p class="explain" style="margin:0">Volgens je rooster moet je op ${DAYS[dow(date)]} <b>${hm(base)}</b> werken.${changed ? ` Voor deze dag staat nu <b>${hm(cur)}</b>.` : ""}</p>
-        <div class="field"><span>Verplaats je je halve dag? Wissel met</span>
+        <div class="field"><span>Werk je hier langer? Kies waar je halve dag naartoe gaat</span>
           <div class="chips">${others.map(d => `<label class="chip"><input type="radio" name="swap" value="${d}" ${d === swapWith ? "checked" : ""}><span>${chipDay(d)} · ${hm(plannedMin(d))}</span></label>`).join("")}
             <button type="button" class="btn small soft" data-swap-cal="${date}">📅 Andere datum kiezen…</button></div>
         </div>
@@ -1326,8 +1326,14 @@ a.link { color: var(--rose); font-weight: 500; }
     const plan = () => {
       // Returns { date: minutes } for every day that changes.
       const sw = f.querySelector('input[name="swap"]:checked');
-      // This day takes the other day's hours; the other day gets what this day asks by your schedule.
-      if (sw) return { [date]: plannedMin(sw.value), [sw.value]: base };
+      // Moving your half day: this day becomes a full day and the other day gets that many hours
+      // less (it can go down to vrij, e.g. a day that was already a half day by an earlier move).
+      // When this day is already full, the two days swap their hours.
+      if (sw) {
+        const o = plannedMin(sw.value), full = cfg().fullDay;
+        if (cur < full) { const mv = Math.min(full - cur, o); return { [date]: cur + mv, [sw.value]: o - mv }; }
+        return { [date]: o, [sw.value]: cur };
+      }
       const m = parseDur(f.elements.min.value);
       return isNaN(m) || m < 0 ? null : { [date]: m };
     };
@@ -1342,7 +1348,7 @@ a.link { color: var(--rose); font-weight: 500; }
         return was === will ? `${label} blijft ${hm(will)}.` : `${label} wordt ${hm(will)} in plaats van ${hm(was)}.`;
       });
       if (mons.length > 1) lines.push("Samen blijft het gelijk: je verplaatst alleen uren.");
-      pr.innerHTML = Object.keys(p).sort().map(d => `${DSHORT[dow(d)]} ${fmtShort(d)}: <b>${hm(p[d])}</b>${p[d] === baseMin(d) ? " (zoals je rooster)" : ""}`).join("<br>")
+      pr.innerHTML = Object.keys(p).sort().map(d => `${DSHORT[dow(d)]} ${fmtShort(d)}: <b>${p[d] ? hm(p[d]) : "vrij"}</b>${p[d] === baseMin(d) ? " (zoals je rooster)" : ""}`).join("<br>")
         + `<br><span class="muted">${lines.join("<br>")}</span>`;
     };
     f.querySelectorAll("[data-plan-min]").forEach(b => b.onclick = () => { f.elements.min.value = hm(+b.dataset.planMin); f.querySelectorAll('input[name="swap"]').forEach(r => r.checked = false); upd(); });
@@ -1392,7 +1398,7 @@ a.link { color: var(--rose); font-weight: 500; }
     const nav = `<button type="button" class="icon-btn" data-cal="${prev}" aria-label="Vorige maand">‹</button><button type="button" class="icon-btn" data-cal="${next}" aria-label="Volgende maand">›</button>`;
     const head = swapFor
       ? sheetHead("Waar gaat je halve dag naartoe?", MONTHS[+mk.slice(5) - 1] + " " + mk.slice(0, 4), `<button type="button" class="btn small ghost" data-plan="${swapFor}">‹ Terug</button>${nav}`)
-        + `<p class="explain">Tik op de dag die in de plaats van <b>${esc(fmtDate(swapFor))}</b> korter wordt. Die twee dagen wisselen dan hun werktijd.</p>`
+        + `<p class="explain">Tik op de dag die in de plaats van <b>${esc(fmtDate(swapFor))}</b> korter wordt. De uren die je op ${esc(fmtShort(swapFor))} extra werkt, gaan van die dag af.</p>`
       : sheetHead("Kies een dag", MONTHS[+mk.slice(5) - 1] + " " + mk.slice(0, 4), nav);
     showSheet(`${head}
       <div class="cal-grid">${["ma", "di", "wo", "do", "vr", "za", "zo"].map(x => `<span class="dh">${x}</span>`).join("")}${cells.join("")}</div>
