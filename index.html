@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>TimeAura</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FBF5F2">
+<meta name="description" content="Je eigen werktijdregistratie: in- en uitprikken, plus/min-saldo, verlof en feestdagen.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TimeAura">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>/* Netlify's free plan injects a "Powered by Netlify" badge that covers the bottom nav */ #nl-badge-frame { display: none !important; }</style>
+<script>window.TIMEAURA_WEB = true; window.TIMEAURA_GOOGLE_CLIENT_ID = "787469293303-oaiebqh007tu91819tskmh1a8tubqase.apps.googleusercontent.com";</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Jost:wght@300..600&display=swap">
+<style>
+/* TimeAura: a soft, feminine time journal. Blush, peach and mauve, a flower-clock mark,
+   a big round punch button on "Vandaag", and plain-language counters. */
+:root {
+  --bg: #FBF5F2; --surface: #FFFFFF; --surface-2: #F8EDE9; --ink: #3D2A33; --muted: #806B74; --faint: #BCA8AF; --line: #F1E2DD;
+  --rose: #B95F7E; --rose-soft: #F8E3E9; --peach: #E39C86; --peach-soft: #FCEAE2; --mauve: #8C6FA6; --mauve-soft: #EFE8F6;
+  --plus: #4F8A6B; --plus-soft: #E2F0E8; --min: #B4475B; --min-soft: #F8E0E4; --warn: #A16C1B; --warn-soft: #F8EBD3;
+  --on-accent: #FFFFFF; --aura-1: #F9DCD6; --aura-2: #EBDDF3; --aura-3: #FCEBE1;
+  --shadow: 0 1px 2px rgba(110, 50, 75, .05), 0 12px 32px rgba(110, 50, 75, .07);
+  --f-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --f-body: "Jost", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --r-card: 24px; --r-ctl: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1B1418; --surface: #251B21; --surface-2: #30242B; --ink: #F5E9EE; --muted: #C0AAB4; --faint: #806C76; --line: #3B2C34;
+    --rose: #EA9DB6; --rose-soft: #43272F; --peach: #F0B39F; --peach-soft: #3F2A24; --mauve: #C2A9E0; --mauve-soft: #30293F;
+    --plus: #8BC6A6; --plus-soft: #1F3229; --min: #F08F9E; --min-soft: #432229; --warn: #E2B46C; --warn-soft: #3A2E1B;
+    --on-accent: #2A1620; --aura-1: #4B2B37; --aura-2: #322845; --aura-3: #45302A; --shadow: 0 1px 2px rgba(0,0,0,.3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1B1418; --surface: #251B21; --surface-2: #30242B; --ink: #F5E9EE; --muted: #C0AAB4; --faint: #806C76; --line: #3B2C34;
+  --rose: #EA9DB6; --rose-soft: #43272F; --peach: #F0B39F; --peach-soft: #3F2A24; --mauve: #C2A9E0; --mauve-soft: #30293F;
+  --plus: #8BC6A6; --plus-soft: #1F3229; --min: #F08F9E; --min-soft: #432229; --warn: #E2B46C; --warn-soft: #3A2E1B;
+  --on-accent: #2A1620; --aura-1: #4B2B37; --aura-2: #322845; --aura-3: #45302A; --shadow: 0 1px 2px rgba(0,0,0,.3);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* Header */
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+.top-inner { display: flex; align-items: center; gap: 20px; padding-block: 12px; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); margin-right: auto; }
+.brand-mark { width: 34px; height: 34px; flex: 0 0 auto; }
+.brand-name { font-family: var(--f-display); font-size: 25px; font-weight: 400; letter-spacing: .01em; }
+.brand-name em { font-style: italic; color: var(--rose); }
+/* Sidebar (computer), like FinAura */
+.side { position: fixed; left: 0; top: 0; bottom: 0; width: 236px; z-index: 25; display: flex; flex-direction: column; gap: 26px; padding: 22px 16px; background: var(--surface); border-right: 1px solid var(--line); overflow-y: auto; }
+.side .brand { padding: 2px 8px; margin: 0; }
+.side-nav { display: grid; gap: 4px; }
+.side-nav a { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 14px; color: var(--muted); text-decoration: none; font-weight: 500; }
+.side-nav a svg { width: 20px; height: 20px; flex: 0 0 auto; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; }
+.side-nav a:hover { background: var(--surface-2); color: var(--ink); }
+.side-nav a[aria-current="page"] { background: var(--rose-soft); color: var(--ink); }
+.side-nav a[aria-current="page"] svg { color: var(--rose); }
+body { padding-left: 236px; }
+header.top { display: none; }
+.toast { margin-left: 118px; }
+.bottom-nav { display: none; }
+@media (max-width: 760px) {
+  .side { display: none; }
+  body { padding-left: 0; }
+  header.top { display: block; }
+  .toast { margin-left: 0; }
+  .bottom-nav { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; inset: auto 0 0; z-index: 30; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--line); padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); }
+  .bottom-nav a { display: grid; justify-items: center; gap: 2px; padding: 6px 0; text-decoration: none; color: var(--muted); font-size: 12px; font-weight: 500; border-radius: 14px; }
+  .bottom-nav svg { width: 22px; height: 22px; }
+  .bottom-nav a[aria-current="page"] { color: var(--rose); background: var(--rose-soft); }
+}
+
+main { padding-block: 24px 120px; }
+.banner { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 14px 18px; border-radius: var(--r-card); background: var(--mauve-soft); margin-bottom: 20px; }
+.banner p { margin: 0; flex: 1 1 280px; }
+.banner.warn { background: var(--warn-soft); }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); padding: 10px 18px; border-radius: 999px; font-weight: 500; text-decoration: none; color: var(--ink); min-height: 44px; }
+.btn:hover { border-color: var(--faint); }
+.btn.primary { background: var(--rose); border-color: var(--rose); color: var(--on-accent); }
+.btn.primary:hover { filter: brightness(1.05); }
+.btn.soft { background: var(--rose-soft); border-color: transparent; }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.danger { color: var(--min); border-color: var(--min-soft); background: var(--min-soft); }
+.btn.small { min-height: 36px; padding: 6px 14px; font-size: 14px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.icon-btn { border: 1px solid var(--line); background: var(--surface); width: 38px; height: 38px; border-radius: 50%; display: inline-grid; place-items: center; color: var(--muted); font-size: 18px; line-height: 1; }
+.icon-btn:hover { color: var(--ink); background: var(--surface-2); }
+
+/* Cards & grid */
+.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 20px; }
+.card { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 22px 24px; min-width: 0; border: 1px solid var(--line); }
+.span-12 { grid-column: span 12; } .span-7 { grid-column: span 7; } .span-5 { grid-column: span 5; } .span-6 { grid-column: span 6; }
+.col { display: grid; gap: 20px; align-content: start; min-width: 0; }
+@media (max-width: 900px) { .span-7, .span-5, .span-6 { grid-column: span 12; } }
+@media (max-width: 520px) { .grid { gap: 14px; } .col { gap: 14px; } .card { padding: 18px 16px; border-radius: 20px; } }
+.card h2 { font-family: var(--f-display); font-weight: 400; font-size: 21px; margin: 0; letter-spacing: -.005em; text-wrap: balance; }
+.card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; margin-bottom: 14px; }
+.card-head .sub { color: var(--muted); font-size: 13px; }
+.eyebrow { text-transform: uppercase; letter-spacing: .12em; font-size: 11px; font-weight: 500; color: var(--muted); }
+.page-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.page-head h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(26px, 4vw, 34px); margin: 0; letter-spacing: -.01em; }
+.page-head h1 em { font-style: italic; color: var(--rose); }
+.stepper { display: flex; align-items: center; gap: 6px; }
+.stepper span { min-width: 150px; text-align: center; font-weight: 500; }
+.cal-open { display: inline-flex; align-items: center; gap: 8px; min-width: 150px; justify-content: center; border: 1px solid transparent; background: transparent; color: var(--ink); font-weight: 500; padding: 8px 12px; border-radius: 999px; min-height: 38px; }
+.cal-open svg { color: var(--rose); flex: 0 0 auto; }
+.cal-open:hover { background: var(--surface-2); border-color: var(--line); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.cal-grid .dh { text-align: center; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 4px 0; }
+.cal-day { position: relative; border: 1px solid transparent; background: transparent; border-radius: 14px; min-height: 52px; padding: 6px 2px 14px; display: grid; justify-items: center; align-content: start; color: var(--ink); font-variant-numeric: tabular-nums; font-size: 15px; }
+.cal-day:hover { background: var(--surface-2); }
+.cal-day.off { color: var(--faint); }
+.cal-day.out { opacity: .35; }
+.cal-day.wk { background: color-mix(in srgb, var(--rose-soft) 45%, transparent); }
+.cal-day.today { border-color: var(--rose); font-weight: 600; }
+.cal-day .dots { position: absolute; bottom: 7px; left: 0; right: 0; display: flex; gap: 3px; justify-content: center; }
+.cal-day .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--peach); }
+.cal-day .dots i.abs { background: var(--mauve); } .cal-day .dots i.hol { background: var(--plus); } .cal-day .dots i.miss { background: var(--min); opacity: .6; }
+.cal-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin: 12px 0 4px; }
+.cal-legend i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+.cal-jump { display: flex; gap: 8px; align-items: end; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.cal-jump .field { flex: 1 1 auto; margin: 0; }
+.explain { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+.explain b { color: var(--ink); font-weight: 500; }
+
+/* Today */
+.today-card { position: relative; overflow: hidden; }
+.today-card::before { content: ""; position: absolute; width: 380px; height: 380px; right: -150px; top: -170px; border-radius: 50%; background: radial-gradient(circle, var(--aura-3), transparent 70%); pointer-events: none; }
+.today-card h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(26px, 4vw, 34px); margin: 2px 0 2px; text-transform: none; letter-spacing: -.01em; position: relative; }
+.today-plan { margin: 0 0 18px; color: var(--muted); position: relative; }
+.punch-wrap { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; position: relative; }
+.punch { position: relative; width: 168px; height: 168px; border-radius: 50%; border: 0; color: var(--on-accent); display: grid; place-content: center; gap: 2px; text-align: center; background: radial-gradient(circle at 32% 28%, color-mix(in srgb, var(--peach) 80%, white), var(--peach) 35%, var(--rose) 100%); box-shadow: 0 0 0 8px var(--rose-soft), 0 18px 40px color-mix(in srgb, var(--rose) 35%, transparent); transition: transform .15s ease; flex: 0 0 auto; }
+.punch:hover { transform: scale(1.02); }
+.punch:active { transform: scale(.98); }
+.punch-label { font-family: var(--f-display); font-size: 24px; font-weight: 400; }
+.punch-sub { font-size: 13px; opacity: .9; }
+.punch.running { background: radial-gradient(circle at 32% 28%, color-mix(in srgb, var(--mauve) 70%, white), var(--mauve) 45%, color-mix(in srgb, var(--mauve) 70%, var(--rose)) 100%); box-shadow: 0 0 0 8px var(--mauve-soft), 0 18px 40px color-mix(in srgb, var(--mauve) 35%, transparent); }
+.punch.running::after { content: ""; position: absolute; inset: -8px; border-radius: 50%; border: 2px solid var(--mauve); opacity: .5; animation: halo 2.4s ease-out infinite; }
+@keyframes halo { from { transform: scale(1); opacity: .5; } to { transform: scale(1.18); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .punch.running::after { animation: none; } }
+.today-stats { display: grid; grid-template-columns: repeat(3, minmax(0, auto)); gap: 14px 26px; flex: 1 1 240px; }
+.today-stats div { min-width: 0; }
+.today-stats b { display: block; font-family: var(--f-display); font-weight: 300; font-size: 30px; line-height: 1.15; margin-top: 2px; }
+@media (max-width: 520px) { .punch-wrap { justify-content: center; gap: 22px; } .today-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); text-align: center; } .today-stats b { font-size: 24px; } }
+.progress { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin: 22px 0 6px; position: relative; }
+.progress i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: linear-gradient(90deg, var(--peach), var(--rose)); }
+.progress i.abs { background: var(--mauve); opacity: .55; }
+.progress-legend { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--muted); }
+.items { display: grid; margin-top: 14px; }
+.item { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 4px; border: 0; border-bottom: 1px solid var(--line); background: transparent; text-align: left; width: 100%; }
+.item:hover { background: var(--surface-2); }
+.item:last-child { border-bottom: 0; }
+.item > div { min-width: 0; }
+.item .badge { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--peach-soft); color: var(--rose); font-size: 12px; font-weight: 600; }
+.item .badge.abs { background: var(--mauve-soft); color: var(--mauve); }
+.item .badge.hol { background: var(--plus-soft); color: var(--plus); }
+.item .t1 { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .t2 { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .amt { font-weight: 500; white-space: nowrap; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+
+/* Saldo hero */
+.hero { position: relative; overflow: hidden; background: linear-gradient(140deg, var(--aura-1), var(--aura-2)); border: 0; }
+.hero::after { content: ""; position: absolute; width: 260px; height: 260px; right: -90px; bottom: -120px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--surface) 55%, transparent), transparent 70%); pointer-events: none; }
+.hero > * { position: relative; z-index: 1; }
+.hero-value { font-family: var(--f-display); font-size: clamp(40px, 6vw, 56px); font-weight: 300; line-height: 1.05; margin: 6px 0 8px; letter-spacing: -.01em; }
+.hero-value.pos { color: var(--plus); } .hero-value.neg { color: var(--min); }
+.hero-note { color: var(--muted); margin: 0 0 4px; font-size: 14px; }
+.hero a { color: var(--rose); font-weight: 500; text-decoration: none; display: inline-block; margin-top: 10px; }
+
+/* Week bars */
+.wbars { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; align-items: end; }
+.wbar { border: 0; background: transparent; padding: 4px 0; display: grid; justify-items: center; gap: 4px; border-radius: 14px; }
+.wbar:hover { background: var(--surface-2); }
+.wbar-track { width: 26px; height: 96px; border-radius: 999px; background: var(--surface-2); position: relative; overflow: hidden; }
+.wbar-track i { position: absolute; inset: auto 0 0 0; border-radius: 999px; background: linear-gradient(0deg, var(--rose), var(--peach)); }
+.wbar.future .wbar-track i { opacity: .5; }
+.wbar.free .wbar-track { background: repeating-linear-gradient(45deg, var(--surface-2), var(--surface-2) 4px, transparent 4px, transparent 8px); }
+.wbar b { font-weight: 500; font-size: 13px; }
+.wbar.now b { color: var(--rose); }
+.wbar small { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.week-total { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 14px; font-size: 14px; color: var(--muted); }
+.week-total b { color: var(--ink); font-weight: 500; }
+
+/* Pills */
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+.pill.pos { background: var(--plus-soft); color: var(--plus); }
+.pill.neg { background: var(--min-soft); color: var(--min); }
+.pill.zero { background: var(--surface-2); color: var(--muted); }
+.pill.abs { background: var(--mauve-soft); color: var(--mauve); }
+.pill.hol { background: var(--plus-soft); color: var(--plus); }
+.pill.work { background: var(--peach-soft); color: var(--rose); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+
+/* Week list */
+.days { display: grid; }
+.day-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 6px; border: 0; border-bottom: 1px solid var(--line); background: transparent; text-align: left; width: 100%; }
+.day-row:last-child { border-bottom: 0; }
+.day-row:hover { background: var(--surface-2); }
+.day-row.today { background: color-mix(in srgb, var(--rose-soft) 55%, transparent); border-radius: 14px; }
+.dr-date { display: grid; justify-items: center; line-height: 1.1; }
+.dr-date b { font-weight: 500; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.dr-date span { font-family: var(--f-display); font-size: 24px; }
+.dr-main { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.dr-main .muted { font-size: 14px; }
+.dr-right { text-align: right; display: grid; justify-items: end; gap: 2px; }
+.dr-right b { font-weight: 500; }
+.dr-right small { color: var(--muted); font-size: 12px; }
+.totals-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+.totals-row div { min-width: 0; }
+.totals-row b { display: block; font-family: var(--f-display); font-weight: 300; font-size: 24px; line-height: 1.2; }
+.totals-row b.pos { color: var(--plus); } .totals-row b.neg { color: var(--min); }
+@media (max-width: 520px) { .totals-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Tables */
+.table-wrap { overflow-x: auto; margin: 0 -4px; }
+table.ledger { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 520px; }
+.ledger th { text-align: right; font-weight: 500; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+.ledger th:first-child, .ledger td:first-child { text-align: left; }
+.ledger td { text-align: right; padding: 9px 6px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.ledger tr:last-child td { border-bottom: 0; }
+.ledger td.pos { color: var(--plus); } .ledger td.neg { color: var(--min); }
+.ledger tr.start td { color: var(--muted); font-style: italic; }
+.ledger td.cap { text-transform: capitalize; }
+
+/* Leave counters */
+.leave { display: grid; gap: 18px; }
+.leave-row { display: grid; gap: 6px; }
+.leave-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.leave-top b { font-weight: 500; }
+.leave-top .left { font-family: var(--f-display); font-size: 22px; font-weight: 300; }
+.leave-top .left small { font-family: var(--f-body); font-size: 13px; color: var(--muted); }
+.track { height: 9px; border-radius: 999px; background: var(--surface-2); position: relative; overflow: hidden; display: flex; }
+.track i { display: block; height: 100%; }
+.track i.used { background: var(--rose); } .track i.plan { background: var(--peach); opacity: .7; } .track i.before { background: var(--faint); }
+.leave-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--muted); }
+.leave-meta b { color: var(--ink); font-weight: 500; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); margin-top: 4px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+
+.hol-list { display: grid; }
+.hrow { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 9px 2px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.hrow:last-child { border-bottom: 0; }
+.hrow .d { color: var(--muted); }
+.hrow .n { min-width: 0; }
+.hrow .n small { display: block; color: var(--muted); font-size: 12px; }
+.hrow.past { opacity: .6; }
+.lfilter { margin-bottom: 6px; }
+.lgroup { margin-top: 14px; }
+.lgroup-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; padding-bottom: 6px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.lgroup-head span { color: var(--muted); font-size: 13px; }
+.lrow { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto 18px; gap: 10px; align-items: center; width: 100%; padding: 10px 4px; border: 0; border-bottom: 1px solid var(--line); background: transparent; text-align: left; color: var(--ink); font-size: 14px; border-radius: 10px; }
+.lrow:hover { background: var(--surface-2); }
+.lrow .d { color: var(--muted); font-size: 13px; } .lrow .d b { color: var(--ink); font-weight: 500; margin-right: 5px; }
+.lrow .n { min-width: 0; } .lrow .n small { display: block; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lrow .edit { color: var(--faint); }
+.vd { padding: 12px 0; border-top: 1px solid var(--line); display: grid; gap: 6px; }
+.vd-head { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 14px; }
+.vd-head .d { color: var(--muted); font-size: 13px; } .vd-head .d b { color: var(--ink); font-weight: 500; margin-right: 5px; }
+.vd-head .n small { display: block; color: var(--muted); font-size: 12px; }
+.vd-take { display: grid; grid-template-columns: minmax(0, 1fr) auto auto 18px; gap: 10px; align-items: center; margin-left: 84px; padding: 7px 10px; border: 0; border-radius: 12px; background: var(--surface-2); color: var(--ink); text-align: left; font-size: 14px; }
+.vd-take small { color: var(--muted); font-size: 12px; } .vd-take .edit { color: var(--faint); }
+.vd-take:hover .edit { color: var(--rose); }
+.vd-take.past { opacity: .7; }
+.vd-pick { justify-self: start; margin-left: 84px; }
+@media (max-width: 520px) { .vd-take, .vd-pick { margin-left: 0; } }
+.lrow.hol .n { color: var(--plus); } .lrow.hol .n small { color: var(--muted); }
+.lrow:hover .edit { color: var(--rose); }
+.lrow.past .d, .lrow.past .n, .lrow.past .num { opacity: .7; }
+.hrow.edit { grid-template-columns: 82px minmax(0, 1fr) 84px 38px; }
+.hrow .hol-min { min-height: 38px; padding: 6px 8px; text-align: center; }
+@media (max-width: 520px) { .hrow { grid-template-columns: 70px minmax(0, 1fr) auto; gap: 8px; } .hrow.edit { grid-template-columns: 58px minmax(0, 1fr) 70px 38px; } }
+
+/* Forms */
+.field { display: grid; gap: 6px; min-width: 0; }
+.field > span { font-size: 12px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.input { width: 100%; padding: 10px 14px; border-radius: var(--r-ctl); border: 1px solid var(--line); background: var(--surface); min-height: 44px; }
+.input:focus { border-color: var(--rose); outline: none; box-shadow: 0 0 0 3px var(--rose-soft); }
+textarea.input { min-height: 70px; resize: vertical; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+.sched { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.sched .input { padding: 8px 6px; text-align: center; }
+@media (max-width: 520px) { .sched { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.sched-card { border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: grid; gap: 12px; margin-bottom: 12px; background: var(--surface-2); }
+.sched-card .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { position: relative; }
+.chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.chip span { display: block; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 14px; font-weight: 500; }
+.chip input:checked + span { background: var(--rose-soft); border-color: var(--rose); color: var(--ink); }
+.chip input:focus-visible + span { outline: 2px solid var(--rose); outline-offset: 2px; }
+.quick-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.quick-chips button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 12px; font-size: 13px; }
+.quick-chips button:hover { background: var(--rose-soft); }
+.preview { padding: 12px 14px; border-radius: var(--r-ctl); background: var(--peach-soft); font-size: 14px; }
+.preview b { font-weight: 600; }
+.form-error { color: var(--min); background: var(--min-soft); padding: 10px 14px; border-radius: var(--r-ctl); margin: 0; font-size: 14px; }
+.stack { display: grid; gap: 14px; }
+.settings-section + .settings-section { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); }
+.settings-section h3 { font-family: var(--f-display); font-weight: 400; font-size: 18px; margin: 0 0 4px; }
+.saved-note { color: var(--plus); font-size: 14px; }
+
+/* Sheet */
+.sheet { position: fixed; inset: 0; z-index: 50; display: grid; align-items: end; justify-items: center; }
+.sheet-backdrop { position: absolute; inset: 0; background: rgba(40, 20, 30, .38); backdrop-filter: blur(2px); }
+.sheet-panel { position: relative; width: min(560px, 100%); max-height: min(92vh, 860px); overflow-y: auto; background: var(--surface); border-radius: 28px 28px 0 0; padding: 22px 22px calc(22px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -10px 40px rgba(60, 20, 40, .18); }
+@media (min-width: 761px) { .sheet { align-items: center; } .sheet-panel { border-radius: 28px; } }
+.sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.sheet-head h2 { font-family: var(--f-display); font-weight: 400; font-size: 24px; margin: 0; }
+.sheet-head h2::first-letter { text-transform: uppercase; }
+.sheet-head .nav { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; }
+.sheet-head .nav .btn { white-space: nowrap; }
+.day-sum { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 12px; border-radius: 18px; background: var(--surface-2); margin-bottom: 8px; }
+.day-sum div { text-align: center; min-width: 0; }
+.day-sum b { display: block; font-family: var(--f-display); font-weight: 300; font-size: 20px; }
+.day-sum small { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.plan-btn { border: 1px dashed var(--faint); background: transparent; border-radius: 14px; padding: 4px 2px; color: var(--ink); text-align: center; min-width: 0; }
+.plan-btn:hover { background: var(--rose-soft); border-color: var(--rose); }
+.plan-btn.changed { border-style: solid; border-color: var(--peach); background: var(--peach-soft); }
+.pill.plan { background: var(--peach-soft); color: var(--warn); }
+.form-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; margin-top: 6px; }
+
+.toast { position: fixed; left: 50%; bottom: calc(88px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 60; background: var(--ink); color: var(--bg); padding: 12px 20px; border-radius: 999px; font-weight: 500; box-shadow: var(--shadow); max-width: calc(100% - 32px); text-align: center; }
+@media (min-width: 761px) { .toast { bottom: 28px; } }
+.sync-pill { position: fixed; right: 16px; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; max-width: 340px; padding: 10px 14px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); font-size: 13px; }
+.sync-pill.warn { background: var(--warn-soft); }
+.sync-pill button { border: 0; background: var(--rose); color: var(--on-accent); border-radius: 999px; padding: 4px 12px; font-weight: 500; }
+.sync-pill small { flex-basis: 100%; color: var(--muted); }
+@media (min-width: 761px) { .sync-pill { bottom: 20px; } }
+.loading { text-align: center; padding: 80px 16px; color: var(--muted); }
+.loading .brand-mark { width: 54px; height: 54px; animation: spin 6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.version { margin: 14px 0 0; color: var(--faint); font-size: 12px; }
+a.link { color: var(--rose); font-weight: 500; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="petal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E39C86"/><stop offset="1" stop-color="#B95F7E"/></linearGradient>
+    <symbol id="mark" viewBox="0 0 40 40">
+      <g fill="url(#petal)" opacity=".92">
+        <ellipse cx="20" cy="9.5" rx="6" ry="9"/>
+        <ellipse cx="20" cy="9.5" rx="6" ry="9" transform="rotate(60 20 20)"/>
+        <ellipse cx="20" cy="9.5" rx="6" ry="9" transform="rotate(120 20 20)"/>
+        <ellipse cx="20" cy="9.5" rx="6" ry="9" transform="rotate(180 20 20)"/>
+        <ellipse cx="20" cy="9.5" rx="6" ry="9" transform="rotate(240 20 20)"/>
+        <ellipse cx="20" cy="9.5" rx="6" ry="9" transform="rotate(300 20 20)"/>
+      </g>
+      <circle cx="20" cy="20" r="9" fill="#FFFFFF"/>
+      <path d="M20 14.5v5.5l3.8 2.4" stroke="#B95F7E" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<aside class="side">
+  <a class="brand" href="#vandaag" aria-label="TimeAura, naar vandaag">
+    <svg class="brand-mark" aria-hidden="true"><use href="#mark"/></svg>
+    <span class="brand-name">Time<em>Aura</em></span>
+  </a>
+  <nav class="side-nav" aria-label="Onderdelen">
+    <a href="#vandaag" data-view="vandaag"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Vandaag</a>
+    <a href="#week" data-view="week"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Week</a>
+    <a href="#verlof" data-view="verlof"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>Verlof</a>
+    <a href="#tellers" data-view="tellers"><svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>Tellers</a>
+    <a href="#instellingen" data-view="instellingen"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Instellingen</a>
+  </nav>
+</aside>
+
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="brand" href="#vandaag" aria-label="TimeAura, naar vandaag">
+      <svg class="brand-mark" aria-hidden="true"><use href="#mark"/></svg>
+      <span class="brand-name">Time<em>Aura</em></span>
+    </a>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="banner"></div>
+  <div id="view"><div class="loading"><svg class="brand-mark" aria-hidden="true"><use href="#mark"/></svg><p>Je uren worden opgehaald…</p></div></div>
+</main>
+
+<nav class="bottom-nav" aria-label="Onderdelen">
+  <a href="#vandaag" data-view="vandaag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Vandaag</a>
+  <a href="#week" data-view="week"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Week</a>
+  <a href="#verlof" data-view="verlof"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>Verlof</a>
+  <a href="#tellers" data-view="tellers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>Tellers</a>
+  <a href="#instellingen" data-view="instellingen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Instellingen</a>
+</nav>
+
+<div id="sheet" class="sheet" hidden>
+  <div class="sheet-backdrop" data-close></div>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" id="sheetBody"></div>
+</div>
+<div id="toast" class="toast" role="status" hidden></div>
+<div id="syncPill" class="sync-pill" hidden role="status"></div>
+
+<script>
+(() => {
+  "use strict";
+  const APP_VERSION = "2.1 (synchroniseren via Google Drive)";
+  const $ = s => document.querySelector(s);
+  const viewEl = $("#view"), bannerEl = $("#banner");
+
+  /* ---------- Small helpers ---------- */
+  const pad = n => String(n).padStart(2, "0");
+  const ymd = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  const todayStr = () => ymd(new Date());
+  const parseD = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+  const addDays = (s, n) => { const d = parseD(s); d.setDate(d.getDate() + n); return ymd(d); };
+  const dow = s => parseD(s).getDay();
+  const mondayOf = s => addDays(s, -((dow(s) + 6) % 7));
+  const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
+  const toMin = t => { const m = /^(\d{1,2}):(\d{2})/.exec(t || ""); return m ? +m[1] * 60 + +m[2] : null; };
+  const clock = m => pad(Math.floor(((m % 1440) + 1440) % 1440 / 60)) + ":" + pad(((m % 60) + 60) % 60);
+  const nowMin = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const sum = (a, f) => a.reduce((s, x) => s + f(x), 0);
+  function hm(min, signed) {
+    min = Math.round(min || 0);
+    const a = Math.abs(min), s = Math.floor(a / 60) + "u" + pad(a % 60);
+    return min < 0 ? "−" + s : (signed && a ? "+" + s : s);
+  }
+  function parseDur(s) {
+    s = String(s == null ? "" : s).trim().replace(/\s/g, "").toLowerCase();
+    if (!s) return NaN;
+    let neg = false;
+    if (/^[-−]/.test(s)) { neg = true; s = s.slice(1); } else if (s[0] === "+") s = s.slice(1);
+    let v; const m = /^(\d+)[u:h](\d{1,2})?$/.exec(s);
+    if (m) v = +m[1] * 60 + +(m[2] || 0);
+    else if (/^\d+([.,]\d+)?$/.test(s)) v = Math.round(parseFloat(s.replace(",", ".")) * 60);
+    else return NaN;
+    return neg ? -v : v;
+  }
+  const DAYS = ["zondag", "maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag"];
+  const DSHORT = ["zo", "ma", "di", "wo", "do", "vr", "za"];
+  const MONTHS = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"];
+  const fmtDate = s => { const d = parseD(s); return DAYS[d.getDay()] + " " + d.getDate() + " " + MONTHS[d.getMonth()]; };
+  const fmtShort = s => { const d = parseD(s); return d.getDate() + " " + MONTHS[d.getMonth()].slice(0, 3); };
+  const fmtLong = s => { const d = parseD(s); return d.getDate() + " " + MONTHS[d.getMonth()] + " " + d.getFullYear(); };
+  function isoWeek(s) {
+    const d = parseD(s); d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+    const w1 = new Date(d.getFullYear(), 0, 4);
+    return 1 + Math.round(((d - w1) / 864e5 - 3 + (w1.getDay() + 6) % 7) / 7);
+  }
+  const fmtNum = (n, d) => n.toLocaleString("nl-BE", { maximumFractionDigits: d == null ? 1 : d });
+  const signCls = m => m > 0 ? "pos" : m < 0 ? "neg" : "zero";
+
+  /* ---------- Absence types ---------- */
+  // credit: counts as worked time for your plus/min balance. budget: has a yearly right you can set.
+  const TYPES = [
+    { code: "thuiswerk", label: "Thuiswerk", short: "TW", credit: true },
+    { code: "verlof", label: "Wettelijk verlof", short: "WV", credit: true, budget: true },
+    { code: "extralegaal", label: "Extralegaal verlof", short: "EV", credit: true, budget: true },
+    { code: "ander_verlof", label: "Ander verlof (anciënniteit, …)", short: "AV", credit: true, budget: true },
+    { code: "vervangdag", label: "Vervanguren feestdagen", short: "VD", credit: true, budget: "auto" },
+    { code: "recup", label: "Recup (plus-uren opnemen)", short: "R", credit: false },
+    { code: "ziekte", label: "Ziekte", short: "Z", credit: true },
+    { code: "opleiding", label: "Opleiding / vorming", short: "O", credit: true },
+    { code: "klein_verlet", label: "Klein verlet", short: "KV", credit: true },
+    { code: "onbetaald", label: "Onbetaald verlof", short: "OV", credit: true },
+    { code: "ander", label: "Andere afwezigheid", short: "A", credit: true }
+  ];
+  const typeOf = c => TYPES.find(t => t.code === c) || TYPES[TYPES.length - 1];
+
+  /* ---------- State ---------- */
+  const DEFAULT_CFG = () => ({
+    schedules: [{ from: "2000-01-01", days: [0, 456, 456, 220, 456, 456, 0] }], // zondag eerst
+    pauseDefault: 30, pauseAfter: 360, fullDay: 456, extraHolidayMin: 412,
+    startDate: todayStr(), startBalance: 0, rights: {}
+  });
+  // WEB: the stand-alone web app for colleagues (TimeAura/web), which keeps everything on the device.
+  const WEB = !!window.TIMEAURA_WEB;
+  const BACKUP_KEY = "timeaura-lastbackup";
+  const backupDue = () => { try { const t = +localStorage.getItem(BACKUP_KEY) || 0; return (state.reg.length + state.abs.length) > 0 && Date.now() - t > 30 * 864e5; } catch (e) { return false; } };
+  const state = { view: "vandaag", reg: [], abs: [], hol: [], cfg: null, loaded: false, weekOf: mondayOf(todayStr()), year: new Date().getFullYear(), sheetUrl: "", db: null, settingsMsg: null };
+  let idx = { reg: new Map(), abs: new Map(), hol: new Map() };
+  function cfg() { return Object.assign(DEFAULT_CFG(), state.cfg || {}); }
+  function reindex() {
+    const group = (list, key) => { const m = new Map(); list.forEach(x => { if (!isDate(x.date)) return; if (!m.has(x.date)) m.set(x.date, []); m.get(x.date).push(x); }); return m; };
+    idx.reg = group(state.reg); idx.abs = group(state.abs); idx.hol = group(state.hol);
+    idx.reg.forEach(l => l.sort((a, b) => (toMin(a.start) || 0) - (toMin(b.start) || 0)));
+  }
+
+  /* ---------- Time rules ---------- */
+  function scheduleFor(date) {
+    const list = cfg().schedules.slice().sort((a, b) => a.from < b.from ? -1 : 1);
+    let s = list[0];
+    list.forEach(x => { if (x.from <= date) s = x; });
+    return s;
+  }
+  // What a day asks by your weekly schedule, and what it asks after a change for that one day
+  // (for example when you move your half day from Wednesday to Friday).
+  const baseMin = date => (scheduleFor(date).days[dow(date)] || 0);
+  const overrideOf = date => { const o = cfg().dayOverrides; return o && o[date] !== undefined && o[date] !== null && !isNaN(+o[date]) ? +o[date] : null; };
+  const plannedMin = date => { const o = overrideOf(date); return o === null ? baseMin(date) : o; };
+  const holidayOn = date => (idx.hol.get(date) || [])[0] || null;
+  // What a holiday is worth: its own hours if set, else a full day for the legal ones
+  // (their id is their date) and the "extra holiday" value for ones you added yourself.
+  const isLegalHol = h => /^\d{4}-\d{2}-\d{2}$/.test(h.id || "");
+  function holMin(h) {
+    if (!h) return 0;
+    if (h.min !== undefined && h.min !== null && h.min !== "" && !isNaN(+h.min)) return +h.min;
+    const c = cfg(); return isLegalHol(h) ? c.fullDay : c.extraHolidayMin;
+  }
+  const runningReg = () => state.reg.filter(r => !r.end && isDate(r.date)).sort((a, b) => a.date < b.date ? 1 : -1)[0] || null;
+  function regSpan(r, endMin) {
+    const s = toMin(r.start); let e = r.end ? toMin(r.end) : endMin;
+    if (s == null || e == null) return 0;
+    if (e < s) e += 1440;
+    return e - s;
+  }
+  function dayInfo(date) {
+    const c = cfg(), t = todayStr();
+    // A holiday on a work day counts as worked for its hours, never more than that day's schedule.
+    // On a day off it gives replacement hours instead (see leaveStats "vervangdag").
+    const planned = plannedMin(date), hol = holidayOn(date), target = planned;
+    const holCredit = hol ? Math.min(holMin(hol), planned) : 0;
+    const regs = idx.reg.get(date) || [], abs = idx.abs.get(date) || [];
+    let worked = 0, running = null;
+    regs.forEach(r => {
+      if (!r.end) {
+        running = r;
+        if (date !== t) return;
+        const span = regSpan(r, nowMin());
+        const pause = r.pause || (regs.length === 1 && span > c.pauseAfter ? c.pauseDefault : 0);
+        worked += Math.max(0, span - pause);
+      } else worked += Math.max(0, regSpan(r) - (r.pause || 0));
+    });
+    // Home working is worked time, not an absence.
+    const home = sum(abs.filter(a => a.type === "thuiswerk"), a => a.min || 0);
+    worked += home;
+    const credit = holCredit + sum(abs.filter(a => typeOf(a.type).credit && a.type !== "thuiswerk"), a => a.min || 0);
+    const absMin = sum(abs, a => a.min || 0);
+    return { date, planned, target, hol, holCredit, home, regs, abs, worked, credit, absMin, done: worked + credit, diff: worked + credit - target, running };
+  }
+  // One walk from the start date: the plus/min balance per day and per month.
+  function ledger() {
+    const c = cfg(), y = addDays(todayStr(), -1), months = new Map();
+    let bal = c.startBalance || 0;
+    if (isDate(c.startDate)) {
+      for (let d = c.startDate; d <= y; d = addDays(d, 1)) {
+        const i = dayInfo(d), k = d.slice(0, 7);
+        if (!months.has(k)) months.set(k, { key: k, target: 0, worked: 0, credit: 0, recup: 0, diff: 0, end: 0 });
+        const m = months.get(k);
+        m.target += i.target; m.worked += i.worked; m.credit += i.credit; m.diff += i.diff;
+        m.recup += sum(i.abs.filter(a => a.type === "recup"), a => a.min || 0);
+        bal += i.diff; m.end = bal;
+      }
+    }
+    return { balance: bal, months };
+  }
+  const weekMinutes = date => sum(scheduleFor(date).days, x => x || 0);
+  // "ma, di, do en vr 7u36 · wo 3u40": a schedule in words, for the explanations.
+  function schedText(days) {
+    const groups = new Map();
+    [1, 2, 3, 4, 5, 6, 0].forEach(d => { const m = days[d] || 0; if (!m) return; if (!groups.has(m)) groups.set(m, []); groups.get(m).push(DSHORT[d]); });
+    const list = n => n.length > 1 ? n.slice(0, -1).join(", ") + " en " + n[n.length - 1] : n[0];
+    return [...groups].map(([m, n]) => `${list(n)} ${hm(m)}`).join(" · ") || "geen werkdagen";
+  }
+  // A shorter work day in the schedule (like a Wednesday morning), if there is one.
+  function shortDay(date) {
+    const days = scheduleFor(date).days, full = Math.max(...days.map(x => x || 0));
+    let best = null;
+    [1, 2, 3, 4, 5, 6, 0].forEach(d => { const m = days[d] || 0; if (m && m < full && (!best || m < best.min)) best = { dow: d, min: m }; });
+    return best;
+  }
+  function leaveStats(year, code) {
+    const t = todayStr(), c = cfg(), r = ((c.rights || {})[year] || {})[code] || {};
+    const list = state.abs.filter(a => a.type === code && String(a.date).slice(0, 4) === String(year));
+    const taken = sum(list.filter(a => a.date <= t), a => a.min || 0), plan = sum(list.filter(a => a.date > t), a => a.min || 0);
+    let right = r.min || 0, auto = 0, autoHols = [];
+    if (typeOf(code).budget === "auto") {
+      // Holidays that fall on a day you don't work give their hours to take later.
+      autoHols = state.hol.filter(h => String(h.date).slice(0, 4) === String(year) && plannedMin(h.date) === 0);
+      auto = sum(autoHols, holMin);
+      if (r.min == null || r.min === "") right = auto;
+    }
+    const before = r.before || 0;
+    return { right, auto, autoHols, before, taken, plan, left: right - before - taken - plan };
+  }
+
+  /* ---------- Banner ---------- */
+  function renderBanner() {
+    const run = runningReg(), t = todayStr();
+    let html = "";
+    if (run && run.date < t) html = `<div class="banner warn"><p>Je bent op <b>${esc(fmtDate(run.date))}</b> niet uitgeprikt. Die dag telt pas mee als je een einduur invult.</p><button class="btn small primary" data-reg="${esc(run.id)}" data-date="${esc(run.date)}">Einduur invullen</button></div>`;
+    else if (state.db && state.db.local && !WEB) html = `<div class="banner"><p><b>Voorbeeldmodus.</b> Je gegevens blijven alleen in deze browser. Installeer TimeAura in Google om ze in je spreadsheet te bewaren.</p></div>`;
+    else if (WEB && state.loaded && state.cfg && backupDue()) html = `<div class="banner"><p><b>Tijd voor een back-up.</b> Je uren staan alleen op dit toestel. Bewaar af en toe een kopie (bv. in je mail of op OneDrive), dan ben je ze nooit kwijt.</p><button type="button" class="btn small primary" data-backup>Download back-up</button></div>`;
+    bannerEl.innerHTML = html;
+  }
+
+  /* ---------- Vandaag ---------- */
+  function renderToday() {
+    const c = cfg(), t = todayStr(), i = dayInfo(t), run = runningReg(), runToday = run && run.date === t;
+    const closed = sum(i.regs.filter(r => r.end), r => Math.max(0, regSpan(r) - (r.pause || 0)));
+    const toGo = Math.max(0, i.target - i.done);
+    let leave = "—", leaveNote = "";
+    if (i.target > 0 || i.regs.length) {
+      const rem = i.target - i.credit - i.home - closed;
+      if (runToday) {
+        if (rem <= 0 || toGo === 0) { leave = "nu"; leaveNote = "Je uren zitten erop"; }
+        else {
+          const extra = i.regs.length === 1 && !run.pause && rem > c.pauseAfter ? c.pauseDefault : run.pause || 0;
+          leave = clock(toMin(run.start) + rem + extra);
+          if (extra && !run.pause) leaveNote = "met " + extra + " min pauze";
+        }
+      } else if (i.target && toGo === 0) { leave = "✓"; leaveNote = "Dag voltooid"; }
+    }
+    let plan;
+    if (i.hol) {
+      const short = i.planned - i.holCredit;
+      plan = `<b>${esc(i.hol.name)}</b>: feestdag` + (!i.planned ? `. Je werkt vandaag niet, dus je krijgt <b>${hm(holMin(i.hol))}</b> vervanguren.`
+        : short > 0 ? `, telt voor ${hm(i.holCredit)}. Je rooster heeft ${hm(i.planned)}: nog <b>${hm(short)}</b> werken of verlof nemen.`
+        : `, je hoeft je ${hm(i.planned)} niet te werken.`);
+    }
+    else if (!i.planned) plan = "Vandaag sta je niet ingeroosterd. Geniet ervan.";
+    else plan = `Gepland: <b>${hm(i.planned)}</b>${dow(t) === 3 ? " (je halve dag)" : ""}`;
+    const pctWork = i.target ? Math.min(100, i.worked / i.target * 100) : 0;
+    const pctAbs = i.target ? Math.min(100 - pctWork, i.credit / i.target * 100) : 0;
+    const led = ledger();
+    const mon = mondayOf(t);
+    let wTarget = 0, wDone = 0; const bars = [];
+    for (let k = 0; k < 7; k++) {
+      const d = addDays(mon, k), x = dayInfo(d);
+      if (k >= 5 && !x.target && !x.regs.length && !x.abs.length) continue;
+      wTarget += x.target; wDone += x.done;
+      const p = x.target ? Math.min(1, x.done / x.target) : (x.done ? 1 : 0);
+      bars.push(`<button class="wbar ${d === t ? "now" : ""} ${d > t ? "future" : ""} ${!x.target && !x.done ? "free" : ""}" data-day="${d}" aria-label="${esc(fmtDate(d))}"><span class="wbar-track"><i style="height:${Math.round(p * 100)}%"></i></span><b>${DSHORT[dow(d)]}</b><small>${x.hol ? "feestdag" : x.target || x.done ? hm(x.done) : "vrij"}</small></button>`);
+    }
+    const yr = new Date().getFullYear();
+    const leaveRows = TYPES.filter(ty => ty.budget).map(ty => ({ ty, s: leaveStats(yr, ty.code) })).filter(o => o.s.right > 0);
+    viewEl.innerHTML = `
+      <div class="grid">
+        <section class="card today-card span-7">
+          <span class="eyebrow">Vandaag</span>
+          <h1>${esc(fmtDate(t))}</h1>
+          <p class="today-plan">${plan}</p>
+          <div class="punch-wrap">
+            <button class="punch ${runToday ? "running" : ""}" id="punchBtn">
+              <span class="punch-label">${runToday ? "Uitprikken" : "Inprikken"}</span>
+              <span class="punch-sub">${runToday ? "ingeprikt om " + esc(run.start) : "het is " + clock(nowMin())}</span>
+            </button>
+            <div class="today-stats">
+              <div><span class="eyebrow">Gewerkt</span><b class="num">${hm(i.worked)}</b></div>
+              <div><span class="eyebrow">Nog te gaan</span><b class="num">${hm(toGo)}</b></div>
+              <div><span class="eyebrow">Vertrekken</span><b class="num">${leave}</b>${leaveNote ? `<small class="muted">${leaveNote}</small>` : ""}</div>
+            </div>
+          </div>
+          ${i.target ? `<div class="progress" aria-hidden="true"><i style="width:${pctWork}%"></i><i class="abs" style="left:${pctWork}%;width:${pctAbs}%"></i></div>
+          <div class="progress-legend"><span>${hm(i.done)} van ${hm(i.target)}</span><span>${i.credit ? hm(i.credit) + " afwezigheid" : ""}</span></div>` : ""}
+          <div class="items">${dayItems(i)}</div>
+          <div class="actions">
+            <button class="btn small soft" data-add-reg data-date="${t}">+ Werktijd</button>
+            ${i.planned && !i.hol && !i.abs.some(a => a.type === "thuiswerk") ? `<button class="btn small primary" data-home="${t}">⌂ Thuiswerkdag</button>` : ""}
+            <button class="btn small soft" data-add-abs data-date="${t}">+ Afwezigheid</button>
+            <button class="btn small ghost" data-day="${t}">Dag openen</button>
+          </div>
+        </section>
+        <div class="col span-5">
+          <section class="card hero">
+            <span class="eyebrow">Plus/min-saldo</span>
+            <div class="hero-value num ${signCls(led.balance)}">${hm(led.balance, true)}</div>
+            <p class="hero-note">t.e.m. gisteren${state.cfg ? ", sinds " + esc(fmtLong(c.startDate)) : ""}</p>
+            <p class="hero-note">Vandaag tot nu: <b>${hm(i.diff, true)}</b>${runToday ? " (loopt nog)" : ""}</p>
+            <a href="#tellers">Hoe is dit berekend? →</a>
+          </section>
+          <section class="card">
+            <div class="card-head"><h2>Deze week</h2><span class="sub">week ${isoWeek(t)}</span></div>
+            <div class="wbars">${bars.join("")}</div>
+            <div class="week-total"><span><b>${hm(wDone)}</b> van ${hm(wTarget)}</span><a class="link" href="#week">Week bekijken</a></div>
+          </section>
+          <section class="card">
+            <div class="card-head"><h2>Verlof ${yr}</h2><a class="link" href="#verlof" style="font-size:14px">Je verlofdagen →</a></div>
+            ${leaveRows.length ? `<div class="leave">${leaveRows.map(o => leaveBlock(o.ty, o.s, true)).join("")}</div>` : `<p class="explain">Vul je verlofrecht in bij <a class="link" href="#instellingen">Instellingen</a> om hier te zien hoeveel je nog over hebt.</p>`}
+          </section>
+        </div>
+      </div>`;
+    $("#punchBtn").onclick = punch;
+  }
+  function dayItems(i) {
+    const out = [];
+    if (i.hol) out.push(`<div class="item"><span class="badge hol">FD</span><div><div class="t1">${esc(i.hol.name)}</div><div class="t2">${i.planned ? "Feestdag, telt als gewerkt" : "Feestdag op een vrije dag: " + hm(holMin(i.hol)) + " vervanguren"}</div></div><span class="amt num">${i.planned ? hm(i.holCredit) : ""}</span></div>`);
+    i.regs.forEach(r => {
+      const span = r.end ? regSpan(r) : null;
+      out.push(`<button class="item" data-reg="${esc(r.id)}" data-date="${esc(r.date)}"><span class="badge">${r.end ? "✿" : "…"}</span><div><div class="t1">${esc(r.start)} – ${r.end ? esc(r.end) : "nog bezig"}</div><div class="t2">${r.pause ? "pauze " + r.pause + " min" : "geen pauze"}${r.note ? " · " + esc(r.note) : ""}</div></div><span class="amt num">${span != null ? hm(Math.max(0, span - (r.pause || 0))) : ""}</span></button>`);
+    });
+    i.abs.forEach(a => {
+      const ty = typeOf(a.type);
+      out.push(`<button class="item" data-abs="${esc(a.id)}" data-date="${esc(a.date)}"><span class="badge abs">${ty.short}</span><div><div class="t1">${esc(ty.label)}</div><div class="t2">${ty.credit ? "telt als gewerkt" : "gaat van je saldo af"}${a.note ? " · " + esc(a.note) : ""}</div></div><span class="amt num">${hm(a.min)}</span></button>`);
+    });
+    return out.join("");
+  }
+
+  async function punch() {
+    const c = cfg(), t = todayStr(), run = runningReg();
+    if (run && run.date !== t) { openReg(run.date, run.id); toast("Vul eerst je einduur van " + fmtShort(run.date) + " in"); return; }
+    const now = clock(nowMin());
+    if (run) {
+      const others = (idx.reg.get(t) || []).filter(r => r.id !== run.id);
+      const span = regSpan({ ...run, end: now });
+      const pause = run.pause || (!others.length && span > c.pauseAfter ? c.pauseDefault : 0);
+      await save("reg", run.id, { ...strip(run), end: now, pause });
+      toast(`Uitgeprikt om ${now}${pause && !run.pause ? ` · ${pause} min pauze afgetrokken` : ""}`);
+    } else {
+      await save("reg", "r" + uid(), { date: t, start: now, end: "", pause: 0, note: "", created: new Date().toISOString() });
+      toast("Ingeprikt om " + now + ". Fijne werkdag!");
+    }
+  }
+  const strip = o => { const { id, ...rest } = o; return rest; };
+
+  /* ---------- Week ---------- */
+  function renderWeek() {
+    const t = todayStr(), mon = state.weekOf, sun = addDays(mon, 6);
+    const rows = []; let tt = 0, tw = 0, tc = 0, td = 0;
+    for (let k = 0; k < 7; k++) {
+      const d = addDays(mon, k), i = dayInfo(d);
+      if (k >= 5 && !i.target && !i.regs.length && !i.abs.length) continue;
+      tt += i.target; tw += i.worked; tc += i.credit; if (d <= t) td += i.diff;
+      const chips = [];
+      if (overrideOf(d) !== null) chips.push(`<span class="pill plan" title="Volgens je rooster ${hm(baseMin(d))}">werktijd ${hm(i.planned)}</span>`);
+      if (i.hol) chips.push(`<span class="pill hol">${esc(i.hol.name)}${i.planned ? " " + hm(i.holCredit) : ""}</span>`);
+      i.regs.forEach(r => chips.push(`<span class="pill work">${esc(r.start)}–${r.end ? esc(r.end) : "…"}${r.pause ? " · " + r.pause + "′" : ""}</span>`));
+      i.abs.forEach(a => chips.push(`<span class="pill abs">${esc(typeOf(a.type).label)} ${hm(a.min)}</span>`));
+      if (!chips.length) chips.push(`<span class="muted">${i.target ? (d < t ? "Niets geregistreerd" : "Gepland " + hm(i.target)) : "Vrij"}</span>`);
+      const diff = d <= t && (i.target || i.done) ? `<span class="pill ${signCls(i.diff)}">${hm(i.diff, true)}</span>` : "";
+      rows.push(`<button class="day-row ${d === t ? "today" : ""}" data-day="${d}"><div class="dr-date"><b>${DSHORT[dow(d)]}</b><span>${parseD(d).getDate()}</span></div><div class="dr-main">${chips.join("")}</div><div class="dr-right"><b class="num">${hm(i.done)}</b><small>van ${hm(i.target)}</small>${diff}</div></button>`);
+    }
+    const label = `${parseD(mon).getDate()} ${MONTHS[parseD(mon).getMonth()].slice(0, 3)} – ${fmtShort(sun)}`;
+    // Month around this week
+    const mk = addDays(mon, 3).slice(0, 7), [yy, mm] = mk.split("-").map(Number);
+    let mt = 0, mw = 0, mc = 0, mdiff = 0;
+    for (let d = mk + "-01"; d.slice(0, 7) === mk; d = addDays(d, 1)) { const i = dayInfo(d); mt += i.target; mw += i.worked; mc += i.credit; if (d <= t) mdiff += i.diff; }
+    viewEl.innerHTML = `
+      <div class="page-head">
+        <h1>Week <em>${isoWeek(mon)}</em></h1>
+        <div class="stepper">
+          <button class="icon-btn" id="wPrev" aria-label="Vorige week">‹</button>
+          <button class="cal-open" data-cal="${mon}" aria-label="Kies een dag in de kalender"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>${label}</button>
+          <button class="icon-btn" id="wNext" aria-label="Volgende week">›</button>
+          ${mon !== mondayOf(t) ? `<button class="btn small soft" id="wNow">Deze week</button>` : ""}
+        </div>
+      </div>
+      <div class="grid">
+        <section class="card span-7">
+          <div class="days">${rows.join("")}</div>
+          <div class="totals-row">
+            <div><span class="eyebrow">Moest</span><b class="num">${hm(tt)}</b></div>
+            <div><span class="eyebrow">Gewerkt</span><b class="num">${hm(tw)}</b></div>
+            <div><span class="eyebrow">Afwezig betaald</span><b class="num">${hm(tc)}</b></div>
+            <div><span class="eyebrow">Verschil${mon <= t && sun > t ? " tot nu" : ""}</span><b class="num ${signCls(td)}">${mon > t ? "—" : hm(td, true)}</b></div>
+          </div>
+        </section>
+        <div class="col span-5">
+          <section class="card">
+            <div class="card-head"><h2 style="text-transform:capitalize">${MONTHS[mm - 1]} ${yy}</h2><span class="sub">hele maand</span></div>
+            <div class="totals-row" style="margin:0;padding:0;border:0;grid-template-columns:repeat(2,minmax(0,1fr))">
+              <div><span class="eyebrow">Moest</span><b class="num">${hm(mt)}</b></div>
+              <div><span class="eyebrow">Gewerkt</span><b class="num">${hm(mw)}</b></div>
+              <div><span class="eyebrow">Afwezig betaald</span><b class="num">${hm(mc)}</b></div>
+              <div><span class="eyebrow">Verschil tot nu</span><b class="num ${signCls(mdiff)}">${hm(mdiff, true)}</b></div>
+            </div>
+          </section>
+          <section class="card">
+            <h2 style="margin-bottom:8px">Zo leest je week</h2>
+            <p class="explain">Je rooster telt <b>${hm(weekMinutes(mon))}</b> per week: ${schedText(scheduleFor(mon).days)}. Een feestdag telt als gewerkt voor zijn uren (officieel ${hm(cfg().fullDay)}, bijkomend ${hm(cfg().extraHolidayMin)}), nooit voor meer dan je rooster die dag. Verlof, ziekte en opleiding tellen alsof je gewerkt hebt.</p>
+            <p class="explain" style="margin:0">Tik op een dag om je uren aan te passen of een afwezigheid toe te voegen.</p>
+          </section>
+        </div>
+      </div>`;
+    $("#wPrev").onclick = () => { state.weekOf = addDays(state.weekOf, -7); render(); };
+    $("#wNext").onclick = () => { state.weekOf = addDays(state.weekOf, 7); render(); };
+    const now = $("#wNow"); if (now) now.onclick = () => { state.weekOf = mondayOf(todayStr()); render(); };
+  }
+
+  /* ---------- Tellers ---------- */
+  function leaveBlock(ty, s, compact) {
+    const from = ty.budget === "auto" && !compact && s.autoHols.length
+      ? `<span>Van ${s.autoHols.map(h => `${esc(h.name)} (${hm(holMin(h))})`).join(", ")}: ${s.autoHols.length === 1 ? "valt" : "vallen"} op een dag dat je niet werkt</span>` : "";
+    const tot = Math.max(s.right, s.before + s.taken + s.plan, 1), c = cfg();
+    return `<div class="leave-row"><div class="leave-top"><b>${esc(ty.label)}</b><span class="left num ${s.left < 0 ? "neg" : ""}">${hm(s.left)} <small>van ${hm(s.right)} over · ≈ ${fmtNum(s.left / c.fullDay)} d</small></span></div>
+      <div class="track"><i class="before" style="width:${s.before / tot * 100}%"></i><i class="used" style="width:${s.taken / tot * 100}%"></i><i class="plan" style="width:${s.plan / tot * 100}%"></i></div>
+      ${compact ? "" : `<div class="leave-meta">${s.before ? `<span>Vóór TimeAura <b>${hm(s.before)}</b></span>` : ""}<span>Opgenomen <b>${hm(s.taken)}</b></span><span>Gepland <b>${hm(s.plan)}</b></span><span>Over <b>${hm(s.left)}</b> = ${fmtNum(s.left / c.fullDay)} dagen van ${hm(c.fullDay)}${(sd => sd ? ` of ${fmtNum(s.left / sd.min)} ${DAYS[sd.dow]}en` : "")(shortDay(todayStr()))}</span>${from}</div>`}</div>`;
+  }
+  function renderCounters() {
+    const c = cfg(), Y = state.year, t = todayStr(), led = ledger();
+    const months = [...led.months.values()].filter(m => m.key.slice(0, 4) === String(Y));
+    const startInYear = c.startDate.slice(0, 4) === String(Y);
+    const prevEnd = [...led.months.values()].filter(m => m.key < Y + "-01").pop();
+    const yearRecup = sum(months, m => m.recup);
+    const ledgerRows = months.map(m => `<tr><td class="cap">${MONTHS[+m.key.slice(5) - 1]}</td><td>${hm(m.target)}</td><td>${hm(m.worked)}</td><td>${hm(m.credit)}</td><td class="${signCls(m.diff)}">${hm(m.diff, true)}</td><td class="${signCls(m.end)}"><b>${hm(m.end, true)}</b></td></tr>`).join("");
+    const hols = state.hol.filter(h => String(h.date).slice(0, 4) === String(Y)).sort((a, b) => a.date < b.date ? -1 : 1).map(h => {
+      const p = plannedMin(h.date), v = holMin(h);
+      const eff = p === 0 ? `vrije dag: ${hm(v)} vervanguren om later op te nemen`
+        : v < p ? `telt voor ${hm(v)}, je rooster heeft ${hm(p)}: ${hm(p - v)} zelf aanvullen`
+        : `${hm(p)} die je niet hoeft te werken`;
+      return `<div class="hrow ${h.date < t ? "past" : ""}"><span class="d">${DSHORT[dow(h.date)]} ${fmtShort(h.date)}</span><span class="n">${esc(h.name)}<small>${eff}</small></span><span class="pill ${p === 0 ? "warn" : v < p ? "neg" : "hol"}">${hm(v)}</span></div>`;
+    }).join("");
+    const other = TYPES.filter(ty => !ty.budget).map(ty => {
+      const list = state.abs.filter(a => a.type === ty.code && String(a.date).slice(0, 4) === String(Y));
+      const days = sum(list, a => Math.min(1, (a.min || 0) / (plannedMin(a.date) || c.fullDay)));
+      return { ty, n: list.length, days, min: sum(list, a => a.min || 0) };
+    });
+    viewEl.innerHTML = `
+      <div class="page-head">
+        <h1>Je <em>tellers</em></h1>
+        ${yearStepper(Y)}
+      </div>
+      <div class="grid">
+        <div class="col span-7">
+          <section class="card hero">
+            <span class="eyebrow">Plus/min-saldo nu</span>
+            <div class="hero-value num ${signCls(led.balance)}">${hm(led.balance, true)}</div>
+            <p class="hero-note">t.e.m. gisteren · ${led.balance >= 0 ? "zoveel heb je méér gewerkt dan je rooster" : "zoveel moet je nog inhalen"}</p>
+          </section>
+          <section class="card">
+            <div class="card-head"><h2>Zo is je saldo opgebouwd</h2><span class="sub">${Y}</span></div>
+            <p class="explain">Elke dag vergelijkt TimeAura wat je <b>gewerkt</b> hebt plus je <b>betaalde afwezigheden</b> (verlof, ziekte, opleiding…) met wat je volgens je rooster <b>moest</b>. Het verschil gaat bij je saldo. Neem je <b>recup</b>, dan registreer je geen uren voor die dag en daalt je saldo met de uren die je moest werken.</p>
+            ${months.length || startInYear ? `<div class="table-wrap"><table class="ledger"><thead><tr><th>Maand</th><th>Moest</th><th>Gewerkt</th><th>Afwezig</th><th>Verschil</th><th>Saldo</th></tr></thead><tbody>
+              <tr class="start"><td>${startInYear ? "Startsaldo " + esc(fmtShort(c.startDate)) : "Saldo begin " + Y}</td><td></td><td></td><td></td><td></td><td>${hm(startInYear ? c.startBalance : prevEnd ? prevEnd.end : c.startBalance, true)}</td></tr>
+              ${ledgerRows}</tbody></table></div>` : `<p class="explain" style="margin:0">Voor ${Y} is er nog niets te tellen. Je saldo telt vanaf ${esc(fmtLong(c.startDate))}.</p>`}
+            ${yearRecup ? `<p class="explain" style="margin:12px 0 0">Recup opgenomen in ${Y}: <b>${hm(yearRecup)}</b> (zit al in de cijfers hierboven).</p>` : ""}
+          </section>
+          <section class="card">
+            <div class="card-head"><h2>Thuiswerk, ziekte en andere</h2><span class="sub">${Y}</span></div>
+            <div class="table-wrap"><table class="ledger" style="min-width:0"><thead><tr><th>Soort</th><th>Keer</th><th>≈ Dagen</th><th>Uren</th></tr></thead><tbody>
+              ${other.every(o => !o.n) ? `<tr><td colspan="4" class="muted">Geen thuiswerk, ziekte of andere afwezigheden in ${Y}.</td></tr>` : ""}
+              ${other.filter(o => o.n).map(o =>`<tr><td>${esc(o.ty.label)}</td><td>${o.n}</td><td>${fmtNum(o.days)}</td><td>${hm(o.min)}</td></tr>`).join("")}
+            </tbody></table></div>
+          </section>
+        </div>
+        <div class="col span-5">
+          ${leaveBalanceCard(Y, "Je verlofdagen", "#verlof")}
+          <section class="card">
+            <div class="card-head"><h2>Feestdagen ${Y}</h2><a class="link" href="#instellingen" style="font-size:14px">Beheren</a></div>
+            <p class="explain">Elke feestdag telt voor een aantal uren: een officiële voor ${hm(c.fullDay)}, een bijkomende voor ${hm(c.extraHolidayMin)}. Op een werkdag telt hij als gewerkt, maar nooit voor meer dan je rooster die dag. Valt hij op een dag dat je niet werkt, dan krijg je zijn uren als vervanguren om later op te nemen.</p>
+            <div class="hol-list">${hols || `<p class="explain">Geen feestdagen voor ${Y}.</p>`}</div>
+          </section>
+        </div>
+      </div>`;
+    bindYearStepper();
+  }
+
+  const yearStepper = Y => `<div class="stepper"><button class="icon-btn" id="yPrev" aria-label="Vorig jaar">‹</button><span>${Y}</span><button class="icon-btn" id="yNext" aria-label="Volgend jaar">›</button></div>`;
+  function bindYearStepper() {
+    $("#yPrev").onclick = () => { state.year--; render(); };
+    $("#yNext").onclick = () => { state.year++; render(); };
+  }
+  function leaveBalanceCard(Y, linkText, href) {
+    const budget = TYPES.filter(ty => ty.budget).map(ty => ({ ty, s: leaveStats(Y, ty.code) }))
+      .filter(o => o.ty.code === "verlof" || o.s.right || o.s.taken || o.s.plan || o.s.before).map(o => leaveBlock(o.ty, o.s, false)).join("");
+    return `<section class="card">
+      <div class="card-head"><h2>Verlof ${Y}</h2><a class="link" href="${href}" style="font-size:14px">${linkText}</a></div>
+      <p class="explain">Verlof telt in <b>uren</b>. Een verlofdag kost wat je die dag moest werken${(sd => sd ? `: <b>${hm(cfg().fullDay)}</b>, op ${DAYS[sd.dow]} maar <b>${hm(sd.min)}</b>` : `, bij jou <b>${hm(Math.max(...scheduleFor(todayStr()).days.map(x => x || 0)))}</b>`)(shortDay(todayStr()))}.</p>
+      <div class="leave">${budget}</div>
+      <div class="legend"><span><i style="background:var(--rose)"></i>opgenomen</span><span><i style="background:var(--peach)"></i>gepland</span><span><i style="background:var(--faint)"></i>vóór TimeAura</span></div>
+    </section>`;
+  }
+
+  /* ---------- Verlof ---------- */
+  function renderLeave() {
+    const c = cfg(), Y = state.year, t = todayStr();
+    // Every leave day of the year, planned ones first, each one tappable to edit.
+    const LEAVE_CODES = TYPES.filter(ty => ty.budget || ty.code === "recup").map(ty => ty.code);
+    const yearLeave = state.abs.filter(a => LEAVE_CODES.includes(a.type) && String(a.date).slice(0, 4) === String(Y));
+    // Holidays sit in the same list (filter "Feestdagen"); they are not leave, so they stay out of the leave totals.
+    const yearHols = state.hol.filter(h => String(h.date).slice(0, 4) === String(Y)).map(h => { const p = plannedMin(h.date), v = holMin(h); return { holiday: h, date: h.date, value: v, min: p ? Math.min(v, p) : v }; });
+    const usedCodes = LEAVE_CODES.filter(code => yearLeave.some(a => a.type === code));
+    const filters = [...usedCodes, ...(yearHols.length ? ["feestdag"] : [])];
+    if (state.leaveFilter && !filters.includes(state.leaveFilter)) state.leaveFilter = "";
+    const lf = state.leaveFilter;
+    const shown = [...(lf === "feestdag" ? [] : yearLeave.filter(a => !lf || a.type === lf)), ...(!lf || lf === "feestdag" ? yearHols : [])];
+    const leaveRow = a => {
+      if (a.holiday) {
+        const p = plannedMin(a.date), v = a.value;
+        const what = p === 0 ? `valt op een vrije dag: ${hm(v)} vervanguren` : v < p ? `telt voor ${hm(v)}, je rooster heeft ${hm(p)}: ${hm(p - v)} zelf aanvullen` : `je hoeft je ${hm(p)} niet te werken`;
+        return `<button type="button" class="lrow hol ${a.date < t ? "past" : ""}" data-day="${a.date}" aria-label="${esc(a.holiday.name)} op ${fmtDate(a.date)} bekijken">
+          <span class="d"><b>${DSHORT[dow(a.date)]}</b>${fmtShort(a.date)}</span>
+          <span class="n">${esc(a.holiday.name)}<small>Feestdag · ${what}</small></span>
+          <span class="num">${hm(a.min)}</span><span class="edit" aria-hidden="true">›</span></button>`;
+      }
+      const ty = typeOf(a.type), p = plannedMin(a.date), part = p && a.min < p ? (a.min === Math.round(p / 2) ? "halve dag" : "deel van de dag") : "hele dag";
+      return `<button type="button" class="lrow ${a.date < t ? "past" : ""}" data-abs="${esc(a.id)}" data-date="${a.date}" aria-label="${esc(ty.label)} op ${fmtDate(a.date)} aanpassen">
+        <span class="d"><b>${DSHORT[dow(a.date)]}</b>${fmtShort(a.date)}</span>
+        <span class="n">${esc(ty.label)}<small>${part}${a.hol && state.hol.find(h => h.id === a.hol) ? " · voor " + esc(state.hol.find(h => h.id === a.hol).name) : ""}${a.note ? " · " + esc(a.note) : ""}</small></span>
+        <span class="num">${hm(a.min)}</span><span class="edit" aria-hidden="true">✎</span></button>`;
+    };
+    const planned = shown.filter(a => a.date >= t).sort((a, b) => a.date < b.date ? -1 : 1);
+    const taken = shown.filter(a => a.date < t).sort((a, b) => a.date > b.date ? -1 : 1);
+    const leaveGroup = (title, list, empty) => {
+      const lv = list.filter(a => !a.holiday), hs = list.length - lv.length;
+      const parts = [];
+      if (lv.length || !hs) parts.push(`${lv.length} ${lv.length === 1 ? "verlofdag" : "verlofdagen"} · ${hm(sum(lv, a => a.min || 0))}`);
+      if (hs) parts.push(`${hs} ${hs === 1 ? "feestdag" : "feestdagen"}`);
+      return `<div class="lgroup"><div class="lgroup-head"><b>${title}</b><span>${parts.join(" · ")}</span></div>${list.length ? list.map(leaveRow).join("") : `<p class="explain" style="margin:6px 0 0">${empty}</p>`}</div>`;
+    };
+    const leaveList = `
+      ${filters.length > 1 ? `<div class="chips lfilter">${["", ...filters].map(code => `<label class="chip"><input type="radio" name="lf" value="${code}" ${code === (lf || "") ? "checked" : ""}><span>${code === "feestdag" ? "Feestdagen" : code ? esc(typeOf(code).label) : "Alles"}</span></label>`).join("")}</div>` : ""}
+      ${leaveGroup("Ingepland", planned, `Nog geen verlof ingepland na vandaag.`)}
+      ${leaveGroup("Al opgenomen", taken, `Nog geen verlof opgenomen in ${Y}${c.startDate.slice(0, 4) === String(Y) ? " sinds de start van TimeAura" : ""}.`)}`;
+    const typeTotals = usedCodes.map(code => {
+      const list = yearLeave.filter(a => a.type === code);
+      return `<tr><td>${esc(typeOf(code).label)}</td><td>${fmtNum(sum(list, a => Math.min(1, (a.min || 0) / (plannedMin(a.date) || c.fullDay))))}</td><td>${hm(sum(list.filter(a => a.date < t), a => a.min || 0))}</td><td>${hm(sum(list.filter(a => a.date >= t), a => a.min || 0))}</td></tr>`;
+    }).join("") + (yearHols.length ? `<tr><td>Feestdagen</td><td>${yearHols.length}</td><td>${hm(sum(yearHols.filter(a => a.date < t), a => a.min))}</td><td>${hm(sum(yearHols.filter(a => a.date >= t), a => a.min))}</td></tr>` : "");
+    // Holidays on a day off, each with the day(s) you take instead.
+    const fh = freeHols(Y), defDate = String(Y) === t.slice(0, 4) ? t : Y + "-01-02";
+    const loose = state.abs.filter(a => a.type === "vervangdag" && String(a.date).slice(0, 4) === String(Y) && !state.hol.some(h => h.id === a.hol));
+    const vdLine = a => `<button type="button" class="vd-take ${a.date < t ? "past" : ""}" data-abs="${esc(a.id)}" data-date="${a.date}" aria-label="Vervangdag op ${fmtDate(a.date)} aanpassen"><span>→ ${DSHORT[dow(a.date)]} ${fmtShort(a.date)}${a.date.slice(0, 4) !== String(Y) ? " " + a.date.slice(0, 4) : ""}</span><span class="num">${hm(a.min)}</span><small>${a.date < t ? "opgenomen" : "ingepland"}</small><span class="edit" aria-hidden="true">✎</span></button>`;
+    const vdCard = fh.length || loose.length ? `<section class="card">
+            <div class="card-head"><h2>Vervangdagen ${Y}</h2><span class="sub">feestdagen op een vrije dag</span></div>
+            <p class="explain">Deze feestdagen vallen op een dag dat je niet werkt. Hun uren mag je op een andere dag opnemen. Kies per feestdag wanneer je hem in de plaats neemt.</p>
+            ${fh.map(h => {
+              const takes = vdFor(h.id).sort((a, b) => a.date < b.date ? -1 : 1), left = vdLeft(h);
+              const st = !takes.length ? `<span class="pill warn">nog te kiezen</span>` : left > 0 ? `<span class="pill warn">nog ${hm(left)}</span>` : left < 0 ? `<span class="pill neg">${hm(-left)} te veel</span>` : takes.every(a => a.date < t) ? `<span class="pill hol">opgenomen</span>` : `<span class="pill pos">ingepland</span>`;
+              return `<div class="vd">
+                <div class="vd-head"><span class="d"><b>${DSHORT[dow(h.date)]}</b>${fmtShort(h.date)}</span><span class="n">${esc(h.name)}<small>telt voor ${hm(holMin(h))}</small></span>${st}</div>
+                ${takes.map(vdLine).join("")}
+                ${left > 0 ? `<button type="button" class="btn small soft vd-pick" data-vd-hol="${esc(h.id)}" data-date="${defDate}">${takes.length ? "+ Rest inplannen" : "Kies vervangdag"}</button>` : ""}
+              </div>`;
+            }).join("")}
+            ${loose.length ? `<div class="vd"><div class="vd-head"><span class="d"></span><span class="n">Niet aan een feestdag gekoppeld<small>tik om te kiezen voor welke feestdag</small></span></div>${loose.map(vdLine).join("")}</div>` : ""}
+          </section>` : "";
+    viewEl.innerHTML = `
+      <div class="page-head">
+        <h1>Je <em>verlof</em></h1>
+        ${yearStepper(Y)}
+      </div>
+      <div class="grid">
+        <div class="col span-7">
+          ${vdCard}
+          <section class="card" id="leaveDays">
+            <div class="card-head"><h2>Je verlofdagen ${Y}</h2><button type="button" class="btn small primary" data-add-abs data-date="${String(Y) === t.slice(0, 4) ? t : Y + "-01-02"}">+ Verlof inplannen</button></div>
+            <p class="explain">Tik op een dag om hem aan te passen, naar een andere datum te verplaatsen of te verwijderen.</p>
+            ${leaveList}
+          </section>
+        </div>
+        <div class="col span-5">
+          ${leaveBalanceCard(Y, "Recht aanpassen", "#instellingen")}
+          ${typeTotals ? `<section class="card">
+            <div class="card-head"><h2>Per soort</h2><span class="sub">${Y}</span></div>
+            <div class="table-wrap"><table class="ledger" style="min-width:0"><thead><tr><th>Soort</th><th>≈ Dagen</th><th>Opgenomen</th><th>Ingepland</th></tr></thead><tbody>${typeTotals}</tbody></table></div>
+          </section>` : ""}
+        </div>
+      </div>`;
+    bindYearStepper();
+    viewEl.querySelectorAll('input[name="lf"]').forEach(r => r.onchange = () => { state.leaveFilter = r.value; render(); });
+  }
+
+  /* ---------- First start: your own regime ---------- */
+  const PRESETS = [
+    { label: "Voltijds", days: [0, 456, 456, 456, 456, 456, 0], extra: 456 },
+    { label: "90% (wo-namiddag vrij)", days: [0, 456, 456, 220, 456, 456, 0], extra: 412 },
+    { label: "80% (woensdag vrij)", days: [0, 456, 456, 0, 456, 456, 0], extra: 365 },
+    { label: "50% (ma, di, wo-vm)", days: [0, 456, 456, 228, 0, 0, 0], extra: 228 }
+  ];
+  function renderSetup() {
+    const p = PRESETS[0], t = todayStr();
+    viewEl.innerHTML = `
+      <div class="page-head"><h1>Welkom bij Time<em>Aura</em></h1></div>
+      <form id="setupForm" class="card stack" style="max-width:720px" novalidate>
+        ${CLIENT_ID ? `<div class="preview" style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center"><span style="flex:1 1 220px">Gebruik je TimeAura al op een ander toestel? Meld je aan met hetzelfde Google-account, dan komen je uren en instellingen hierheen.</span><button type="button" class="btn small primary" data-cloud-sync>Aanmelden met Google</button></div>` : ""}
+        <p class="explain" style="margin:0">Stel eerst je eigen werkregime in. Je kan alles later nog aanpassen bij <b>Instellingen</b>.${WEB ? " Je uren blijven alleen op dit toestel: niemand anders ziet ze." : ""}</p>
+        <div class="field"><span>1. Je regime</span>
+          <div class="chips">${PRESETS.map((x, n) => `<label class="chip"><input type="radio" name="preset" value="${n}" ${n === 0 ? "checked" : ""}><span>${x.label}</span></label>`).join("")}</div>
+        </div>
+        <div class="field"><span>Zoveel werk je per dag, zonder pauze (laat leeg als je vrij bent)</span>
+          <div class="sched">${ORDER.map(d => `<label class="field"><span>${DSHORT[d]}</span><input class="input num" name="d${d}" value="${p.days[d] ? hm(p.days[d]) : ""}" placeholder="vrij"></label>`).join("")}</div>
+          <span class="muted" style="font-size:13px">Week: <b class="num" id="setupTotal"></b></span>
+        </div>
+        <div class="form-grid">
+          <label class="field"><span>2. Een bijkomende feestdag telt voor</span><input class="input num" name="extra" value="${hm(p.extra)}"><small class="muted">Voltijds is dat een hele dag. Deeltijds vaak minder: vraag na bij HR.</small></label>
+          <label class="field"><span>Middagpauze bij in- en uitprikken</span><input class="input num" name="pause" value="30" inputmode="numeric"><small class="muted">minuten, als je meer dan 6 uur aanwezig bent</small></label>
+        </div>
+        <label class="chip" style="align-self:start"><input type="checkbox" name="extraDays" checked><span>Ik krijg ook 11 juli en 26 december vrij</span></label>
+        <div class="form-grid">
+          <label class="field"><span>3. Je tellers beginnen op</span><input class="input" type="date" name="start" value="${t}"></label>
+          <label class="field"><span>Je plus/min-saldo op die dag ('s morgens)</span><input class="input num" name="balance" value="0u00" placeholder="bv. +2u15 of -0u30"></label>
+        </div>
+        <p class="explain" style="margin:0">Je saldo vind je in het systeem van je werkgever. Je <b>verlofrecht</b> vul je daarna in bij Instellingen.</p>
+        <p class="form-error" id="setupErr" hidden></p>
+        <div class="form-actions"><span></span><button class="btn primary">TimeAura starten</button></div>
+      </form>`;
+    const f = $("#setupForm");
+    const days = () => [0, 1, 2, 3, 4, 5, 6].map(d => { const v = f.elements["d" + d].value.trim(); return v ? parseDur(v) : 0; });
+    const upd = () => { const ds = days(); $("#setupTotal").textContent = ds.some(isNaN) ? "—" : hm(sum(ds, x => x)); };
+    f.querySelectorAll('input[name="preset"]').forEach(r => r.onchange = () => {
+      const x = PRESETS[+r.value];
+      ORDER.forEach(d => f.elements["d" + d].value = x.days[d] ? hm(x.days[d]) : "");
+      f.elements.extra.value = hm(x.extra); upd();
+    });
+    f.addEventListener("input", upd); upd();
+    f.onsubmit = async e => {
+      e.preventDefault(); const err = $("#setupErr"), show = m => { err.textContent = m; err.hidden = false; };
+      const ds = days(), extra = parseDur(f.elements.extra.value), bal = parseDur(f.elements.balance.value || "0"), pause = Math.round(+f.elements.pause.value);
+      if (ds.some(x => isNaN(x) || x < 0 || x > 1440)) return show("Typ de uren per dag als 7u36 of 7:36.");
+      if (!sum(ds, x => x)) return show("Vul minstens één werkdag in.");
+      if (isNaN(extra) || extra < 0) return show("Typ wat een bijkomende feestdag waard is, bv. 7u36.");
+      if (isNaN(bal)) return show("Typ je saldo als +2u15 of -0u30.");
+      if (!isDate(f.elements.start.value)) return show("Kies de dag waarop je tellers beginnen.");
+      const extraDays = f.elements.extraDays.checked;
+      if (!extraDays) for (const h of state.hol.filter(h => /^e/.test(h.id))) await del("hol", h.id);
+      await saveCfg({ ...DEFAULT_CFG(), schedules: [{ from: "2000-01-01", days: ds }], fullDay: Math.max(...ds), extraHolidayMin: extra,
+        pauseDefault: isNaN(pause) || pause < 0 ? 30 : pause, startDate: f.elements.start.value, startBalance: bal, extraDays });
+      try { if (!localStorage.getItem(BACKUP_KEY)) localStorage.setItem(BACKUP_KEY, String(Date.now())); } catch (e) {}
+      toast(CLIENT_ID && !cloudOn() ? "Klaar! Gebruik je ook een ander toestel? Meld je aan bij Instellingen." : "Klaar! Prik in of registreer je eerste dag"); route("vandaag");
+    };
+  }
+
+  /* ---------- Instellingen ---------- */
+  const ORDER = [1, 2, 3, 4, 5, 6, 0];
+  function renderSettings() {
+    const c = cfg(), Y = state.year;
+    const scheds = c.schedules.slice().sort((a, b) => a.from < b.from ? -1 : 1);
+    const schedHtml = scheds.map((s, n) => {
+      const tot = sum(s.days, x => x || 0);
+      return `<div class="sched-card" data-sched="${n}">
+        <div class="row"><b>${n === 0 ? "Vanaf het begin" : "Vanaf " + esc(fmtLong(s.from))}</b>${n ? `<button type="button" class="btn small ghost" data-del-sched="${n}">Verwijderen</button>` : ""}</div>
+        ${n ? `<label class="field"><span>Geldt vanaf</span><input class="input" type="date" name="from" value="${esc(s.from)}"></label>` : ""}
+        <div class="sched">${ORDER.map(d => `<label class="field"><span>${DSHORT[d]}</span><input class="input num" name="d${d}" value="${s.days[d] ? hm(s.days[d]) : ""}" placeholder="vrij" inputmode="text"></label>`).join("")}</div>
+        <span class="muted" style="font-size:13px">Week: <b class="num" data-sched-total>${hm(tot)}</b> = ${fmtNum(tot / (c.fullDay * 5) * 100)}% van een voltijdse week van ${hm(c.fullDay * 5)}</span>
+      </div>`;
+    }).join("");
+    const r = (c.rights || {})[Y] || {};
+    const legal = 4 * weekMinutes(Y + "-07-01");
+    const rightsHtml = TYPES.filter(ty => ty.budget === true).map(ty => {
+      const x = r[ty.code] || {};
+      return `<div class="form-grid" style="align-items:end">
+        <label class="field"><span>${esc(ty.label)}: recht</span><input class="input num" name="r_${ty.code}" value="${x.min ? hm(x.min) : ""}" placeholder="bv. 136u16"></label>
+        <label class="field"><span>Al opgenomen vóór TimeAura</span><input class="input num" name="b_${ty.code}" value="${x.before ? hm(x.before) : ""}" placeholder="0u00"></label>
+      </div>`;
+    }).join("");
+    const vd = leaveStats(Y, "vervangdag");
+    const hols = state.hol.filter(h => String(h.date).slice(0, 4) === String(Y)).sort((a, b) => a.date < b.date ? -1 : 1);
+    viewEl.innerHTML = `
+      <div class="page-head"><h1>Je <em>instellingen</em></h1></div>
+      <div class="grid">
+        <div class="col span-7">
+          <form class="card" id="schedForm">
+            <div class="card-head"><h2>Weekrooster</h2></div>
+            <p class="explain">Zo lang moet je per dag werken, <b>zonder</b> je pauze. Typ bijvoorbeeld <b>7u36</b> of <b>7:36</b>, of laat leeg als je die dag vrij bent. Verandert je regime later, voeg dan een nieuw rooster toe vanaf die datum: je oude weken blijven dan juist geteld.</p>
+            ${schedHtml}
+            <div class="actions" style="justify-content:space-between">
+              <span style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input class="input" type="date" id="newSchedFrom" style="width:auto" aria-label="Nieuw rooster vanaf"><button type="button" class="btn small soft" id="addSched">+ Nieuw rooster vanaf</button></span>
+              <button class="btn primary">Rooster bewaren</button>
+            </div>
+          </form>
+          <form class="card" id="baseForm">
+            <div class="card-head"><h2>Saldo en pauze</h2></div>
+            <div class="settings-section stack">
+              <p class="explain" style="margin:0">Kijk in het systeem van je werkgever hoeveel plus- of min-uren je op een bepaalde dag had, en neem dat over. Vanaf die dag rekent TimeAura verder.</p>
+              <div class="form-grid">
+                <label class="field"><span>Startdatum</span><input class="input" type="date" name="startDate" value="${esc(c.startDate)}" required></label>
+                <label class="field"><span>Saldo bij de start</span><input class="input num" name="startBalance" value="${hm(c.startBalance, true)}" placeholder="+2u15 of −1u30"></label>
+              </div>
+            </div>
+            <div class="settings-section stack">
+              <p class="explain" style="margin:0">Bij in- en uitprikken trekt TimeAura automatisch je pauze af, als je die dag maar één keer in- en uitprikt. Prik je uit voor je lunch, dan telt die tijd vanzelf niet mee.</p>
+              <div class="form-grid">
+                <label class="field"><span>Pauze (minuten)</span><input class="input num" name="pauseDefault" type="number" min="0" max="240" value="${c.pauseDefault}"></label>
+                <label class="field"><span>Als je langer blijft dan</span><input class="input num" name="pauseAfter" value="${hm(c.pauseAfter)}"></label>
+                <label class="field"><span>Een volledige dag</span><input class="input num" name="fullDay" value="${hm(c.fullDay)}"></label>
+                <label class="field"><span>Bijkomende feestdag</span><input class="input num" name="extraHolidayMin" value="${hm(c.extraHolidayMin)}"></label>
+              </div>
+              <p class="explain" style="margin:0;font-size:13px">Een volledige dag is ook wat een officiële feestdag waard is. Werk je deeltijds, dan telt een bijkomende feestdag (zoals 11 juli of 26 december) vaak minder. Vraag bij twijfel na bij HR.</p>
+            </div>
+            <div class="actions" style="justify-content:flex-end"><button class="btn primary">Bewaren</button></div>
+          </form>
+          <section class="card" id="cloudCard" hidden></section>
+          <section class="card" id="dataCard"></section>
+        </div>
+        <div class="col span-5">
+          <form class="card" id="rightsForm">
+            <div class="card-head"><h2>Verlofrecht</h2>
+              <div class="stepper"><button type="button" class="icon-btn" id="ryPrev" aria-label="Vorig jaar">‹</button><span style="min-width:60px">${Y}</span><button type="button" class="icon-btn" id="ryNext" aria-label="Volgend jaar">›</button></div></div>
+            <p class="explain">Neem de uren over die je werkgever toont. Wettelijk verlof is 4 keer je weekuren: <b>4 × ${hm(weekMinutes(Y + "-07-01"))} = ${hm(legal)}</b> <button type="button" class="btn small soft" id="useLegal" style="min-height:30px;padding:2px 12px">Gebruik dit</button></p>
+            <div class="stack">${rightsHtml}
+              <label class="field"><span>Vervanguren feestdagen</span><input class="input num" name="vd_min" value="${r.vervangdag && r.vervangdag.min != null && r.vervangdag.min !== "" ? hm(r.vervangdag.min) : ""}" placeholder="automatisch: ${hm(vd.auto)}"></label>
+              <p class="explain" style="margin:-6px 0 0;font-size:13px">Laat leeg: dan telt TimeAura de uren van de feestdagen die op een vrije dag vallen. Vul alleen in als je werkgever iets anders toont.</p>
+            </div>
+            <div class="actions" style="justify-content:flex-end"><button class="btn primary">Verlofrecht ${Y} bewaren</button></div>
+          </form>
+          <section class="card">
+            <div class="card-head"><h2>Feestdagen ${Y}</h2></div>
+            <p class="explain">De 10 wettelijke feestdagen staan er elk jaar vanzelf en tellen voor <b>${hm(c.fullDay)}</b>. Ook de bijkomende dagen van je werkgever, 11 juli en 26 december, komen er elk jaar vanzelf bij; die en feestdagen die je zelf toevoegt tellen standaard voor <b>${hm(c.extraHolidayMin)}</b>. Je kan de uren per feestdag aanpassen; maak het vak leeg om terug de standaard te gebruiken.</p>
+            <div class="hol-list">${hols.map(h => `<div class="hrow edit"><span class="d">${DSHORT[dow(h.date)]} ${fmtShort(h.date)}</span><span class="n">${esc(h.name)}<small>${isLegalHol(h) ? "officieel" : "bijkomend"}</small></span><input class="input num hol-min" data-hol-min="${esc(h.id)}" value="${h.min != null && h.min !== "" ? hm(h.min) : ""}" placeholder="${hm(holMin({ ...h, min: null }))}" aria-label="${esc(h.name)} telt voor"><button type="button" class="icon-btn" data-del-hol="${esc(h.id)}" aria-label="${esc(h.name)} verwijderen">×</button></div>`).join("") || `<p class="explain">Nog geen feestdagen voor ${Y}.</p>`}</div>
+            <form id="holForm" class="form-grid" style="margin-top:14px;align-items:end">
+              <label class="field"><span>Datum</span><input class="input" type="date" name="date" required></label>
+              <label class="field"><span>Naam</span><input class="input" name="name" placeholder="bv. Tweede kerstdag" required maxlength="60"></label>
+              <label class="field"><span>Telt voor</span><input class="input num" name="min" placeholder="${hm(c.extraHolidayMin)}"></label>
+              <button class="btn soft">+ Toevoegen</button>
+            </form>
+          </section>
+        </div>
+      </div>`;
+    renderCloudCard(); renderDataCard();
+    if (state.settingsMsg) { toast(state.settingsMsg); state.settingsMsg = null; }
+    const sf = $("#schedForm");
+    sf.addEventListener("input", e => {
+      const card = e.target.closest("[data-sched]"); if (!card) return;
+      const tot = sum(ORDER, d => { const v = parseDur(card.querySelector(`[name="d${d}"]`).value); return isNaN(v) ? 0 : v; });
+      card.querySelector("[data-sched-total]").textContent = hm(tot);
+    });
+    const readScheds = () => {
+      const out = [];
+      sf.querySelectorAll("[data-sched]").forEach((card, n) => {
+        const days = [0, 0, 0, 0, 0, 0, 0];
+        ORDER.forEach(d => { const raw = card.querySelector(`[name="d${d}"]`).value; const v = raw.trim() ? parseDur(raw) : 0; days[d] = isNaN(v) || v < 0 ? NaN : Math.min(v, 1440); });
+        const fromEl = card.querySelector('[name="from"]');
+        out.push({ from: n === 0 ? "2000-01-01" : fromEl.value, days });
+      });
+      return out;
+    };
+    sf.onsubmit = async e => {
+      e.preventDefault();
+      const list = readScheds();
+      if (list.some(s => s.days.some(isNaN))) { toast("Typ de uren als 7u36 of 7:36"); return; }
+      if (list.some(s => !isDate(s.from))) { toast("Kies een datum voor elk nieuw rooster"); return; }
+      await saveCfg({ ...c, schedules: list }); state.settingsMsg = "Rooster bewaard"; render();
+    };
+    $("#addSched").onclick = async () => {
+      const from = $("#newSchedFrom").value;
+      if (!isDate(from)) { toast("Kies eerst vanaf welke datum het nieuwe rooster geldt"); $("#newSchedFrom").focus(); return; }
+      const list = readScheds();
+      if (list.some(s => s.days.some(isNaN))) { toast("Typ de uren als 7u36 of 7:36"); return; }
+      const base = scheduleFor(from);
+      list.push({ from, days: base.days.slice() });
+      await saveCfg({ ...c, schedules: list }); state.settingsMsg = "Nieuw rooster toegevoegd. Pas de uren aan en bewaar."; render();
+    };
+    sf.querySelectorAll("[data-del-sched]").forEach(b => b.onclick = async () => {
+      const n = +b.dataset.delSched; const list = readScheds().filter((_, k) => k !== n);
+      await saveCfg({ ...c, schedules: list.some(s => s.days.some(isNaN)) ? scheds.filter((_, k) => k !== n) : list }); state.settingsMsg = "Rooster verwijderd"; render();
+    });
+    $("#baseForm").onsubmit = async e => {
+      e.preventDefault(); const f = e.target.elements;
+      const bal = f.startBalance.value.trim() ? parseDur(f.startBalance.value) : 0;
+      const after = parseDur(f.pauseAfter.value), full = parseDur(f.fullDay.value), pause = Math.round(+f.pauseDefault.value);
+      const extra = parseDur(f.extraHolidayMin.value);
+      if (!isDate(f.startDate.value)) { toast("Kies een startdatum"); return; }
+      if (isNaN(bal)) { toast("Typ je saldo als +2u15 of −1u30"); f.startBalance.focus(); return; }
+      if (isNaN(after) || isNaN(full) || full <= 0 || isNaN(pause) || pause < 0) { toast("Controleer de pauze en de lengte van een dag"); return; }
+      if (isNaN(extra) || extra < 0) { toast("Typ de uren van een bijkomende feestdag als 6u52"); f.extraHolidayMin.focus(); return; }
+      await saveCfg({ ...c, startDate: f.startDate.value, startBalance: bal, pauseDefault: pause, pauseAfter: after, fullDay: full, extraHolidayMin: extra });
+      state.settingsMsg = "Bewaard"; render();
+    };
+    $("#ryPrev").onclick = () => { state.year--; render(); };
+    $("#ryNext").onclick = () => { state.year++; render(); };
+    $("#useLegal").onclick = () => { $('[name="r_verlof"]').value = hm(legal); };
+    $("#rightsForm").onsubmit = async e => {
+      e.preventDefault(); const f = e.target.elements; const yr = {}; let bad = false;
+      TYPES.filter(ty => ty.budget === true).forEach(ty => {
+        const a = f["r_" + ty.code].value.trim(), b = f["b_" + ty.code].value.trim();
+        const min = a ? parseDur(a) : 0, before = b ? parseDur(b) : 0;
+        if (isNaN(min) || isNaN(before)) bad = true;
+        if (min || before) yr[ty.code] = { min, before };
+      });
+      const vdv = f.vd_min.value.trim();
+      if (vdv) { const n = parseDur(vdv); if (isNaN(n) || n < 0) bad = true; else yr.vervangdag = { min: n }; }
+      if (bad) { toast("Typ de uren als 136u16 of 136:16"); return; }
+      const rights = { ...(c.rights || {}) }; rights[Y] = yr;
+      await saveCfg({ ...c, rights }); state.settingsMsg = "Verlofrecht " + Y + " bewaard"; render();
+    };
+    $("#holForm").onsubmit = async e => {
+      e.preventDefault(); const f = e.target.elements;
+      if (!isDate(f.date.value) || !f.name.value.trim()) return;
+      const raw = f.min.value.trim(), min = raw ? parseDur(raw) : null;
+      if (raw && (isNaN(min) || min < 0)) { toast("Typ de uren als 6u52 of 7u36"); f.min.focus(); return; }
+      const rec = { date: f.date.value, name: f.name.value.trim().slice(0, 60) };
+      if (min != null) rec.min = min;
+      await save("hol", "x" + uid(), rec);
+      state.year = +f.date.value.slice(0, 4); state.settingsMsg = "Feestdag toegevoegd"; render();
+    };
+    viewEl.querySelectorAll("[data-hol-min]").forEach(inp => inp.onchange = async () => {
+      const h = state.hol.find(x => x.id === inp.dataset.holMin); if (!h) return;
+      const raw = inp.value.trim(), min = raw ? parseDur(raw) : null;
+      if (raw && (isNaN(min) || min < 0)) { toast("Typ de uren als 6u52 of 7u36"); inp.focus(); return; }
+      const rec = { date: h.date, name: h.name };
+      if (min != null) rec.min = min;
+      await save("hol", h.id, rec);
+      inp.value = min != null ? hm(min) : "";
+      toast(`${h.name} telt nu voor ${hm(holMin({ ...rec, id: h.id }))}`);
+    });
+    viewEl.querySelectorAll("[data-del-hol]").forEach(b => b.onclick = async () => {
+      if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = "?"; b.style.color = "var(--min)"; toast("Tik nogmaals om deze feestdag te verwijderen"); setTimeout(() => { b.dataset.armed = ""; b.textContent = "×"; b.style.color = ""; }, 3500); return; }
+      await del("hol", b.dataset.delHol); state.settingsMsg = "Feestdag verwijderd"; render();
+    });
+  }
+
+  function downloadBackup() {
+    const labels = {}; TYPES.forEach(t => labels[t.code] = t.label);
+    const obj = { app: "TimeAura", version: APP_VERSION, exported: new Date().toISOString(), instellingen: state.cfg || DEFAULT_CFG(), registraties: state.reg, afwezigheden: state.abs, feestdagen: state.hol, soorten: labels };
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(obj, null, 1)], { type: "application/json" }));
+    a.download = "timeaura-" + todayStr() + ".json"; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    try { localStorage.setItem(BACKUP_KEY, String(Date.now())); } catch (e) {}
+    renderBanner();
+  }
+
+  function renderDataCard() {
+    const el = $("#dataCard"); if (!el) return;
+    el.innerHTML = `<div class="card-head"><h2>Je gegevens</h2></div>
+      ${WEB && cloudOn() ? `<p class="explain">Je uren staan op dit toestel en in je eigen Google Drive (zie hierboven). Een extra back-up downloaden kan altijd.</p>`
+      : WEB ? `<p class="explain">Je uren staan <b>alleen op dit toestel</b>, in deze app. Er gaat niets naar een server, ook niet naar je werkgever. Download daarom af en toe een back-up en bewaar die (bv. in je mail of op OneDrive). Met die back-up zet je je uren ook over naar een nieuwe gsm.</p>`
+      : `<p class="explain">Alles staat in je eigen Google-spreadsheet <b>TimeAura</b>, in de tabbladen Registraties, Afwezigheden, Feestdagen en Instellingen. Zo blijft je tijdsregistratie jaren bewaard, ook los van deze app.</p>`}
+      <div class="actions" style="margin-top:0">
+        ${state.sheetUrl ? `<a class="btn small soft" href="${esc(state.sheetUrl)}" target="_blank" rel="noopener">Open je spreadsheet ↗</a>` : ""}
+        <button type="button" class="btn small" id="exportBtn">Download back-up (.json)</button>
+      </div>
+      <div class="field" style="margin-top:16px">
+        <span>Back-up terugzetten</span>
+        <p class="explain" style="margin:0">Dit vervangt alles wat nu in ${WEB ? "de app" : "je spreadsheet"} staat.</p>
+        <div class="actions" style="margin-top:4px"><input type="file" id="importFile" accept=".json,application/json" class="input" style="flex:1 1 200px;width:auto"><button type="button" class="btn small primary" id="importBtn">Terugzetten</button></div>
+      </div>
+      <p class="version">TimeAura-versie ${APP_VERSION}${WEB ? ` · <a class="link" href="privacy.html" target="_blank" rel="noopener">Privacy</a>` : ""}</p>`;
+    $("#exportBtn").onclick = downloadBackup;
+    const btn = $("#importBtn");
+    btn.onclick = async () => {
+      const file = $("#importFile").files[0];
+      if (!file) { toast("Kies eerst een back-upbestand"); return; }
+      if (!btn.dataset.armed) { btn.dataset.armed = "1"; btn.textContent = "Tik nogmaals: vervangt alles"; setTimeout(() => { btn.dataset.armed = ""; btn.textContent = "Terugzetten"; }, 4000); return; }
+      btn.disabled = true; btn.textContent = "Bezig…";
+      try {
+        const obj = JSON.parse(await file.text());
+        if (!obj || obj.app !== "TimeAura") throw new Error("Dit is geen TimeAura-back-up.");
+        await state.db.importAll(obj);
+        toast("Back-up teruggezet"); render();
+      } catch (e) { toast(String((e && e.message) || e).replace(/^Error:\s*/, "")); btn.disabled = false; btn.textContent = "Terugzetten"; }
+    };
+  }
+
+  /* ---------- Sheet: day, work time, absence ---------- */
+  const sheetEl = $("#sheet"), sheetBody = $("#sheetBody");
+  let sheetMode = null, lastFocus = null;
+  function showSheet(html, mode) {
+    sheetMode = mode; sheetBody.innerHTML = html;
+    if (sheetEl.hidden) { lastFocus = document.activeElement; sheetEl.hidden = false; document.body.style.overflow = "hidden"; }
+    sheetBody.scrollTop = 0;
+    const f = sheetBody.querySelector("[data-focus]") || sheetBody.querySelector("h2");
+    if (f) { if (f.tagName === "H2") f.tabIndex = -1; setTimeout(() => f.focus(), 30); }
+  }
+  function closeSheet() {
+    sheetEl.hidden = true; sheetMode = null; document.body.style.overflow = "";
+    if (lastFocus && lastFocus.focus && lastFocus.isConnected) lastFocus.focus();
+  }
+  const sheetHead = (eyebrow, title, extra) => `<div class="sheet-head"><div><span class="eyebrow">${eyebrow}</span><h2 id="sheetTitle">${esc(title)}</h2></div><div class="nav">${extra || ""}<button type="button" class="icon-btn" data-close aria-label="Sluiten">×</button></div></div>`;
+
+  function openDay(date) {
+    const i = dayInfo(date), t = todayStr();
+    // Keep the week behind the window in step when you browse days with ‹ ›.
+    if (state.view === "week" && mondayOf(date) !== state.weekOf) { state.weekOf = mondayOf(date); render(); }
+    showSheet(`${sheetHead(date === t ? "Vandaag" : "Dag", fmtDate(date), `<button type="button" class="icon-btn" data-goto-day="${addDays(date, -1)}" aria-label="Vorige dag">‹</button><button type="button" class="icon-btn" data-goto-day="${addDays(date, 1)}" aria-label="Volgende dag">›</button>`)}
+      <div class="day-sum">
+        <button type="button" class="plan-btn ${overrideOf(date) !== null ? "changed" : ""}" data-plan="${date}" aria-label="Werktijd van deze dag aanpassen"><b class="num">${hm(i.target)}</b><small>moest ✎</small></button>
+        <div><b class="num">${hm(i.worked)}</b><small>gewerkt</small></div>
+        <div><b class="num">${hm(i.credit)}</b><small>afwezig</small></div>
+        <div><b class="num" style="color:var(--${i.diff > 0 ? "plus" : i.diff < 0 ? "min" : "muted"})">${hm(i.diff, true)}</b><small>verschil</small></div>
+      </div>
+      ${overrideOf(date) !== null ? `<p class="explain">Werktijd voor deze dag aangepast: <b>${hm(plannedMin(date))}</b> in plaats van ${hm(baseMin(date))} volgens je rooster.</p>` : ""}
+      ${i.hol && i.planned ? `<p class="explain">${esc(i.hol.name)} telt voor ${hm(holMin(i.hol))}. ${i.holCredit < i.planned ? `Je rooster heeft ${hm(i.planned)}, dus ${hm(i.planned - i.holCredit)} vul je zelf aan met werk of verlof.` : `Je hoeft je ${hm(i.planned)} niet te werken.`}</p>` : ""}
+      <div class="items">${dayItems(i) || `<p class="explain" style="margin:8px 0">Nog niets geregistreerd voor deze dag.</p>`}</div>
+      <div class="actions">
+        ${i.planned && !i.abs.some(a => a.type === "thuiswerk") ? `<button type="button" class="btn primary" data-home="${date}">⌂ Thuiswerkdag</button>` : ""}
+        <button type="button" class="btn soft" data-add-reg data-date="${date}" data-focus>+ Werktijd</button>
+        <button type="button" class="btn soft" data-add-abs data-date="${date}">+ Afwezigheid</button>
+      </div>`, { kind: "day", date });
+  }
+
+  // Change what one day asks, or swap it with another day of the same week.
+  function openPlan(date) {
+    const base = baseMin(date), cur = plannedMin(date), changed = overrideOf(date) !== null;
+    const mon = mondayOf(date), others = [];
+    for (let k = 0; k < 7; k++) { const d = addDays(mon, k); if (d !== date && (k < 5 || plannedMin(d))) others.push(d); }
+    const opts = [...new Set([cfg().fullDay, ...cfg().schedules.flatMap(s => s.days), 0].filter(x => x !== undefined))].sort((a, b) => b - a);
+    showSheet(`${sheetHead("Werktijd van deze dag", fmtDate(date), `<button type="button" class="btn small ghost" data-back-day="${date}">‹ Dag</button>`)}
+      <form id="planForm" class="stack" novalidate>
+        <p class="explain" style="margin:0">Volgens je rooster moet je op ${DAYS[dow(date)]} <b>${hm(base)}</b> werken.${changed ? ` Voor deze dag staat nu <b>${hm(cur)}</b>.` : ""}</p>
+        <div class="field"><span>Verplaats je je halve dag? Wissel met</span>
+          <div class="chips">${others.map(d => `<label class="chip"><input type="radio" name="swap" value="${d}"><span>${DSHORT[dow(d)]} ${parseD(d).getDate()} · ${hm(plannedMin(d))}</span></label>`).join("")}</div>
+        </div>
+        <label class="field"><span>Of vul zelf in hoeveel je deze dag moet werken</span>
+          <input class="input num" name="min" value="${hm(cur)}" data-focus>
+          <span class="quick-chips">${opts.map(m => `<button type="button" data-plan-min="${m}">${m ? hm(m) : "vrij"}</button>`).join("")}</span>
+        </label>
+        <div class="preview" id="planPreview"></div>
+        <p class="form-error" id="planErr" hidden></p>
+        <div class="form-actions">
+          ${changed ? `<button type="button" class="btn ghost" id="planReset">Terug naar rooster (${hm(base)})</button>` : "<span></span>"}
+          <button class="btn primary">Bewaren</button>
+        </div>
+      </form>`, { kind: "plan", date });
+    const f = $("#planForm");
+    const plan = () => {
+      // Returns { date: minutes } for every day that changes.
+      const sw = f.querySelector('input[name="swap"]:checked');
+      if (sw) return { [date]: plannedMin(sw.value), [sw.value]: cur };
+      const m = parseDur(f.elements.min.value);
+      return isNaN(m) || m < 0 ? null : { [date]: m };
+    };
+    const upd = () => {
+      const p = plan(), pr = $("#planPreview");
+      if (!p) { pr.textContent = "Typ de uren als 7u36 of 3:40."; return; }
+      const week = Array.from({ length: 7 }, (_, k) => addDays(mon, k));
+      const was = sum(week, plannedMin), will = sum(week, d => d in p ? p[d] : plannedMin(d));
+      pr.innerHTML = Object.keys(p).sort().map(d => `${DSHORT[dow(d)]} ${fmtShort(d)}: <b>${hm(p[d])}</b>${p[d] === baseMin(d) ? " (zoals je rooster)" : ""}`).join("<br>")
+        + `<br><span class="muted">${was === will ? `Je week blijft ${hm(will)}.` : `Je week wordt ${hm(will)} in plaats van ${hm(was)}.`}</span>`;
+    };
+    f.querySelectorAll("[data-plan-min]").forEach(b => b.onclick = () => { f.elements.min.value = hm(+b.dataset.planMin); f.querySelectorAll('input[name="swap"]').forEach(r => r.checked = false); upd(); });
+    f.elements.min.addEventListener("input", () => { f.querySelectorAll('input[name="swap"]').forEach(r => r.checked = false); upd(); });
+    f.addEventListener("change", upd); upd();
+    f.onsubmit = async e => {
+      e.preventDefault(); const p = plan();
+      if (!p) { const err = $("#planErr"); err.textContent = "Typ het aantal uren, bijvoorbeeld 7u36."; err.hidden = false; return; }
+      await applyPlan(p); toast("Werktijd aangepast"); openDay(date);
+    };
+    const r = $("#planReset");
+    if (r) r.onclick = async () => { await applyPlan({ [date]: base }); toast("Terug naar je rooster"); openDay(date); };
+  }
+  async function applyPlan(p) {
+    const o = Object.assign({}, cfg().dayOverrides || {});
+    for (const d of Object.keys(p)) {
+      const before = plannedMin(d), after = p[d];
+      if (after === baseMin(d)) delete o[d]; else o[d] = after;
+      // A full-day absence (verlof, thuiswerk…) follows the day's new hours.
+      if (before !== after && after > 0) for (const a of (idx.abs.get(d) || [])) if (a.min === before) {
+        const { id, ...rest } = a; await save("abs", id, { ...rest, min: after });
+      }
+    }
+    await saveCfg({ ...cfg(), dayOverrides: o });
+  }
+
+  // Month calendar: pick any day, then the day window opens so you can register right away.
+  function openCal(anyDate) {
+    const t = todayStr(), mk = anyDate.slice(0, 7), first = mk + "-01";
+    const start = mondayOf(first), wk = state.view === "week" ? state.weekOf : null;
+    const prev = addDays(first, -1).slice(0, 7) + "-01", next = addDays(first, 32).slice(0, 7) + "-01";
+    const end = addDays(mondayOf(addDays(next, -1)), 7); // whole weeks up to the month's last day
+    const cells = [];
+    for (let d = start; d < end; d = addDays(d, 1)) {
+      const i = dayInfo(d), dots = [];
+      if (i.hol) dots.push("hol");
+      if (i.regs.length || i.home) dots.push("work");
+      if (i.abs.some(a => a.type !== "thuiswerk")) dots.push("abs");
+      if (!dots.length && i.target && d < t && d >= cfg().startDate) dots.push("miss");
+      const cls = ["cal-day", d.slice(0, 7) !== mk ? "out" : "", !i.planned ? "off" : "", d === t ? "today" : "", wk && d >= wk && d < addDays(wk, 7) ? "wk" : ""].filter(Boolean).join(" ");
+      cells.push(`<button type="button" class="${cls}" data-cal-pick="${d}" aria-label="${fmtDate(d)}">${parseD(d).getDate()}<span class="dots">${dots.map(x => `<i class="${x === "work" ? "" : x}"></i>`).join("")}</span></button>`);
+    }
+    showSheet(`${sheetHead("Kies een dag", MONTHS[+mk.slice(5) - 1] + " " + mk.slice(0, 4), `<button type="button" class="icon-btn" data-cal="${prev}" aria-label="Vorige maand">‹</button><button type="button" class="icon-btn" data-cal="${next}" aria-label="Volgende maand">›</button>`)}
+      <div class="cal-grid">${["ma", "di", "wo", "do", "vr", "za", "zo"].map(x => `<span class="dh">${x}</span>`).join("")}${cells.join("")}</div>
+      <div class="cal-legend"><span><i style="background:var(--peach)"></i>gewerkt</span><span><i style="background:var(--mauve)"></i>afwezig</span><span><i style="background:var(--plus)"></i>feestdag</span><span><i style="background:var(--min);opacity:.6"></i>niets ingevuld</span></div>
+      <form class="cal-jump" id="calJump">
+        <label class="field"><span>Of kies een datum</span><input class="input" type="date" name="d" value="${anyDate}" required></label>
+        <button class="btn soft" type="submit">Ga</button>
+        ${mk !== t.slice(0, 7) ? `<button class="btn ghost" type="button" data-cal="${t}">Vandaag</button>` : ""}
+      </form>`, { kind: "cal", date: anyDate });
+    $("#calJump").onsubmit = e => { e.preventDefault(); const v = e.target.d.value; if (/^\d{4}-\d{2}-\d{2}$/.test(v)) pickDay(v); };
+  }
+  function pickDay(d) {
+    state.weekOf = mondayOf(d);
+    if (state.view !== "week") route("week"); else render();
+    openDay(d);
+  }
+
+  function openReg(date, id) {
+    const r = id ? state.reg.find(x => x.id === id) : null;
+    if (id && !r) return;
+    const back = sheetMode && sheetMode.kind === "day";
+    const others = (idx.reg.get(date) || []).filter(x => !r || x.id !== r.id);
+    const c = cfg();
+    const def = r || { date, start: others.length ? "" : "08:30", end: "", pause: others.length ? 0 : (plannedMin(date) > c.pauseAfter ? c.pauseDefault : 0), note: "" };
+    showSheet(`${sheetHead(r ? "Werktijd aanpassen" : "Werktijd toevoegen", fmtDate(date), back ? `<button type="button" class="btn small ghost" data-back-day="${date}">‹ Dag</button>` : "")}
+      <form id="regForm" class="stack" novalidate>
+        <div class="form-grid">
+          <label class="field"><span>Datum</span><input class="input" type="date" name="date" value="${esc(def.date)}" required></label>
+          <label class="field"><span>Begin</span><input class="input num" type="time" name="start" value="${esc(def.start)}" required data-focus></label>
+          <label class="field"><span>Einde</span><input class="input num" type="time" name="end" value="${esc(def.end)}"></label>
+        </div>
+        <label class="field"><span>Pauze (minuten)</span>
+          <input class="input num" type="number" name="pause" min="0" max="600" value="${def.pause || 0}">
+          <span class="quick-chips">${[0, 15, 30, 45, 60].map(m => `<button type="button" data-pause="${m}">${m} min</button>`).join("")}</span>
+        </label>
+        <label class="field"><span>Notitie</span><input class="input" name="note" value="${esc(def.note)}" maxlength="200" placeholder="bv. overleg, avondvergadering"></label>
+        <div class="preview" id="regPreview"></div>
+        <p class="form-error" id="regErr" hidden></p>
+        <div class="form-actions">
+          ${r ? `<button type="button" class="btn danger" id="regDel">Verwijderen</button>` : "<span></span>"}
+          <button class="btn primary">Bewaren</button>
+        </div>
+      </form>`, { kind: "reg", date, id, back });
+    const f = $("#regForm");
+    const upd = () => {
+      const el = f.elements, s = toMin(el.start.value), e = toMin(el.end.value), p = Math.max(0, +el.pause.value || 0);
+      const pr = $("#regPreview");
+      if (s == null) { pr.textContent = "Vul je beginuur in."; return; }
+      if (e == null) { pr.innerHTML = "Zonder einduur blijf je <b>ingeprikt</b>. Je kan later uitprikken op de startpagina."; return; }
+      const span = regSpan({ start: el.start.value, end: el.end.value });
+      const w = Math.max(0, span - p), pl = plannedMin(el.date.value) || 0;
+      pr.innerHTML = `Aanwezig ${hm(span)} − pauze ${p} min = <b>${hm(w)}</b> gewerkt${e < s ? " (tot na middernacht)" : ""}${pl && !others.length ? ` · rooster ${hm(pl)}, verschil <b>${hm(w - pl, true)}</b>` : ""}`;
+    };
+    f.addEventListener("input", upd); upd();
+    f.querySelectorAll("[data-pause]").forEach(b => b.onclick = () => { f.elements.pause.value = b.dataset.pause; upd(); });
+    f.onsubmit = async e => {
+      e.preventDefault(); const el = f.elements, err = $("#regErr");
+      const showErr = m => { err.textContent = m; err.hidden = false; };
+      if (!isDate(el.date.value)) return showErr("Kies een datum.");
+      if (toMin(el.start.value) == null) return showErr("Vul je beginuur in.");
+      if (!el.end.value) { const run = runningReg(); if (run && (!r || run.id !== r.id)) return showErr(`Je bent al ingeprikt op ${fmtDate(run.date)}. Vul eerst daar een einduur in.`); }
+      const rec = { date: el.date.value, start: el.start.value, end: el.end.value || "", pause: Math.max(0, Math.round(+el.pause.value || 0)), note: el.note.value.trim().slice(0, 200), created: r ? r.created || new Date().toISOString() : new Date().toISOString() };
+      await save("reg", r ? r.id : "r" + uid(), rec);
+      toast(r ? "Aangepast" : "Werktijd bewaard");
+      if (back) openDay(rec.date); else closeSheet();
+    };
+    const d = $("#regDel");
+    if (d) d.onclick = async () => {
+      if (!d.dataset.armed) { d.dataset.armed = "1"; d.textContent = "Tik nogmaals om te verwijderen"; setTimeout(() => { d.dataset.armed = ""; d.textContent = "Verwijderen"; }, 3500); return; }
+      await del("reg", r.id); toast("Verwijderd"); if (back) openDay(date); else closeSheet();
+    };
+  }
+
+  // Holidays on a day you don't work: their hours are taken later as vervangdag(en), each linked to the holiday.
+  const freeHols = Y => state.hol.filter(h => String(h.date).slice(0, 4) === String(Y) && plannedMin(h.date) === 0).sort((a, b) => a.date < b.date ? -1 : 1);
+  const vdFor = (holId, exceptId) => state.abs.filter(a => a.type === "vervangdag" && a.hol === holId && a.id !== exceptId);
+  const vdLeft = (h, exceptId) => holMin(h) - sum(vdFor(h.id, exceptId), a => a.min || 0);
+
+  function openAbs(date, id, opts) {
+    opts = opts || {};
+    const a = id ? state.abs.find(x => x.id === id) : null;
+    if (id && !a) return;
+    const back = sheetMode && sheetMode.kind === "day";
+    const pl = plannedMin(date);
+    let mode = "full";
+    if (a) mode = a.min === pl ? "full" : a.min === Math.round(pl / 2) ? "half" : "custom";
+    else if (!pl) mode = "custom";
+    const type = a ? a.type : opts.hol ? "vervangdag" : "verlof";
+    // Which holiday a vervangdag replaces: the one asked for, the saved one, or the first that still has hours.
+    const hy = +date.slice(0, 4), holChoices = [...freeHols(hy - 1), ...freeHols(hy)];
+    const holId = a ? a.hol || "" : opts.hol || (holChoices.find(h => vdLeft(h) > 0) || {}).id || "";
+    const preHol = !a && opts.hol && state.hol.find(h => h.id === opts.hol);
+    let customVal = a && mode === "custom" ? hm(a.min) : "";
+    if (preHol) { const left = vdLeft(preHol); if (left > 0 && left < pl) { mode = "custom"; customVal = hm(left); } }
+    showSheet(`${sheetHead(a ? "Afwezigheid aanpassen" : "Afwezigheid toevoegen", fmtDate(date), back ? `<button type="button" class="btn small ghost" data-back-day="${date}">‹ Dag</button>` : "")}
+      <form id="absForm" class="stack" novalidate>
+        <div class="field"><span>Soort</span><div class="chips">${TYPES.map(t => `<label class="chip"><input type="radio" name="type" value="${t.code}" ${t.code === type ? "checked" : ""}><span>${esc(t.label)}</span></label>`).join("")}</div></div>
+        <label class="field" id="holField"><span>In de plaats van welke feestdag?</span>
+          <select class="input" name="hol">
+            <option value="">Geen bepaalde feestdag</option>
+            ${holChoices.concat(holId && !holChoices.some(h => h.id === holId) ? state.hol.filter(h => h.id === holId) : []).map(h => `<option value="${esc(h.id)}" ${h.id === holId ? "selected" : ""}>${esc(h.name)} (${DSHORT[dow(h.date)]} ${fmtShort(h.date)} ${h.date.slice(0, 4)}) · nog ${hm(Math.max(0, vdLeft(h, a && a.id)))} van ${hm(holMin(h))}</option>`).join("")}
+          </select>
+        </label>
+        <div class="form-grid">
+          <label class="field"><span>${a || preHol ? "Datum" : "Van"}</span><input class="input" type="date" name="date" value="${esc(date)}" required ${preHol ? "data-focus" : ""}></label>
+          ${a || preHol ? "" : `<label class="field"><span>Tot en met (optioneel)</span><input class="input" type="date" name="until" value=""></label>`}
+        </div>
+        <div class="field"><span>Hoe lang</span><div class="chips">
+          <label class="chip"><input type="radio" name="mode" value="full" ${mode === "full" ? "checked" : ""}><span>Hele dag</span></label>
+          <label class="chip"><input type="radio" name="mode" value="half" ${mode === "half" ? "checked" : ""}><span>Halve dag</span></label>
+          <label class="chip"><input type="radio" name="mode" value="custom" ${mode === "custom" ? "checked" : ""}><span>Eigen uren</span></label>
+        </div></div>
+        <label class="field" id="customField"><span>Uren</span><input class="input num" name="custom" value="${customVal}" placeholder="bv. 2u30"></label>
+        <label class="field"><span>Notitie</span><input class="input" name="note" value="${esc(a ? a.note : "")}" maxlength="200"></label>
+        <div class="preview" id="absPreview"></div>
+        <p class="form-error" id="absErr" hidden></p>
+        <div class="form-actions">
+          ${a ? `<button type="button" class="btn danger" id="absDel">Verwijderen</button>` : "<span></span>"}
+          <button class="btn primary">Bewaren</button>
+        </div>
+      </form>`, { kind: "abs", date, id, back });
+    const f = $("#absForm");
+    const days = () => {
+      const el = f.elements, from = el.date.value, until = el.until && isDate(el.until.value) ? el.until.value : from;
+      if (!isDate(from)) return [];
+      if (until === from || a) return [from];
+      const out = [];
+      for (let d = from; d <= until && out.length < 370; d = addDays(d, 1)) if (plannedMin(d) > 0 && !holidayOn(d)) out.push(d);
+      return out;
+    };
+    const minFor = d => {
+      const el = f.elements, m = el.mode.value, p = plannedMin(d);
+      if (m === "full") return p; if (m === "half") return Math.round(p / 2);
+      return parseDur(el.custom.value);
+    };
+    const upd = () => {
+      const el = f.elements; $("#customField").hidden = el.mode.value !== "custom";
+      $("#holField").hidden = el.type.value !== "vervangdag";
+      const ty = typeOf(el.type.value), list = days(), pr = $("#absPreview");
+      if (!list.length) { pr.textContent = "In die periode sta je geen enkele dag ingeroosterd."; return; }
+      const mins = list.map(minFor);
+      if (mins.some(isNaN)) { pr.textContent = "Typ de uren als 2u30 of 2:30."; return; }
+      const tot = sum(mins, x => x);
+      const what = list.length > 1 ? `${list.length} werkdagen, samen <b>${hm(tot)}</b>` : `<b>${hm(tot)}</b>`;
+      let eff;
+      if (ty.code === "recup") eff = `Je plus/min-saldo daalt met ${hm(tot)}.`;
+      else if (ty.code === "vervangdag" && el.hol.value && state.hol.find(h => h.id === el.hol.value)) {
+        const h = state.hol.find(x => x.id === el.hol.value), left = vdLeft(h, a && a.id) - tot;
+        eff = `In de plaats van ${esc(h.name)} (${hm(holMin(h))}). ${left > 0 ? `Daarna blijft er nog ${hm(left)} van over.` : left < 0 ? `Dat is ${hm(-left)} meer dan die feestdag waard is: die uren gaan van je andere vervanguren af.` : "Daarmee is die feestdag volledig opgenomen."}${list.length === 1 && plannedMin(list[0]) > tot ? ` Je rooster die dag is ${hm(plannedMin(list[0]))}: de overige ${hm(plannedMin(list[0]) - tot)} werk je of neem je anders op.` : ""}`;
+      }
+      else if (ty.budget) { const s = leaveStats(+list[0].slice(0, 4), ty.code); eff = s.right ? `Daarna heb je nog ${hm(s.left - (a ? tot - a.min : tot))} ${ty.label.toLowerCase()} over.` : "Telt als gewerkt."; }
+      else eff = "Telt als gewerkt, je saldo blijft gelijk.";
+      pr.innerHTML = `${what}. ${eff}${list.length === 1 && el.mode.value !== "custom" && !plannedMin(list[0]) ? " Op deze dag sta je niet ingeroosterd: kies Eigen uren." : ""}`;
+    };
+    f.addEventListener("input", upd); f.addEventListener("change", upd); upd();
+    f.onsubmit = async e => {
+      e.preventDefault(); const el = f.elements, err = $("#absErr");
+      const showErr = m => { err.textContent = m; err.hidden = false; };
+      const list = days();
+      if (!list.length) return showErr("Kies een dag waarop je ingeroosterd bent, of kies Eigen uren.");
+      const mins = list.map(minFor);
+      if (mins.some(x => isNaN(x) || x <= 0)) return showErr(el.mode.value === "custom" ? "Typ het aantal uren, bijvoorbeeld 2u30." : "Op deze dag sta je niet ingeroosterd. Kies Eigen uren.");
+      const note = el.note.value.trim().slice(0, 200), type = el.type.value;
+      const hol = type === "vervangdag" ? el.hol.value : "";
+      for (let k = 0; k < list.length; k++) {
+        const body = { date: list[k], type, min: mins[k], note, created: a ? a.created || new Date().toISOString() : new Date().toISOString() };
+        if (hol) body.hol = hol;
+        await save("abs", a ? a.id : "a" + uid(), body);
+      }
+      toast(list.length > 1 ? list.length + " dagen bewaard" : "Afwezigheid bewaard");
+      if (back) openDay(list[0]); else closeSheet();
+    };
+    const d = $("#absDel");
+    if (d) d.onclick = async () => {
+      if (!d.dataset.armed) { d.dataset.armed = "1"; d.textContent = "Tik nogmaals om te verwijderen"; setTimeout(() => { d.dataset.armed = ""; d.textContent = "Verwijderen"; }, 3500); return; }
+      await del("abs", a.id); toast("Verwijderd"); if (back) openDay(date); else closeSheet();
+    };
+  }
+
+  // A home-working day: no punching, it simply counts as the hours of that day's schedule.
+  async function homeDay(date) {
+    const p = plannedMin(date), i = dayInfo(date);
+    if (!p) { toast("Op deze dag sta je niet ingeroosterd"); return; }
+    if (i.abs.some(a => a.type === "thuiswerk")) { toast("Deze dag staat al als thuiswerk"); return; }
+    await save("abs", "a" + uid(), { date, type: "thuiswerk", min: p, note: "", created: new Date().toISOString() });
+    toast(`Thuiswerkdag: telt voor ${hm(p)}`);
+    if (sheetMode && sheetMode.kind === "day") openDay(date);
+  }
+
+  /* ---------- Clicks & routing ---------- */
+  document.addEventListener("click", e => {
+    const el = e.target.closest && e.target.closest("[data-close],[data-back-day],[data-goto-day],[data-plan],[data-cal],[data-cal-pick],[data-vd-hol],[data-home],[data-add-reg],[data-add-abs],[data-reg],[data-abs],[data-day],a[href^='#']");
+    if (el && el.dataset.home) return homeDay(el.dataset.home);
+    const bk = e.target.closest && e.target.closest("[data-backup]"); if (bk) return downloadBackup();
+    const cs = e.target.closest && e.target.closest("[data-cloud-sync]"); if (cs) return cloudSync(true);
+    if (!el) return;
+    if (el.matches("a[href^='#']")) { e.preventDefault(); if (!sheetEl.hidden) closeSheet(); route(el.getAttribute("href").slice(1)); return; }
+    if (el.hasAttribute("data-close")) return closeSheet();
+    if (el.dataset.backDay) return openDay(el.dataset.backDay);
+    if (el.dataset.gotoDay) return openDay(el.dataset.gotoDay);
+    if (el.dataset.plan) return openPlan(el.dataset.plan);
+    if (el.dataset.cal) return openCal(el.dataset.cal);
+    if (el.dataset.calPick) return pickDay(el.dataset.calPick);
+    if (el.dataset.vdHol) return openAbs(el.dataset.date || todayStr(), null, { hol: el.dataset.vdHol });
+    if (el.hasAttribute("data-add-reg")) return openReg(el.dataset.date || todayStr(), null);
+    if (el.hasAttribute("data-add-abs")) return openAbs(el.dataset.date || todayStr(), null);
+    if (el.dataset.reg) return openReg(el.dataset.date, el.dataset.reg);
+    if (el.dataset.abs) return openAbs(el.dataset.date, el.dataset.abs);
+    if (el.dataset.day) return openDay(el.dataset.day);
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !sheetEl.hidden) closeSheet(); });
+
+  function render() {
+    document.querySelectorAll("[data-view]").forEach(a => { if (a.dataset.view === state.view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+    renderBanner();
+    if (!state.loaded) return;
+    if (!state.cfg) { renderSetup(); return; }
+    if (state.view === "week") renderWeek();
+    else if (state.view === "verlof") renderLeave();
+    else if (state.view === "tellers") renderCounters();
+    else if (state.view === "instellingen") renderSettings();
+    else renderToday();
+  }
+  // Inside Google's frame the address bar is not ours, so views switch in the page itself.
+  function route(name) {
+    state.view = ["vandaag", "week", "verlof", "tellers", "instellingen"].includes(name) ? name : "vandaag";
+    render(); window.scrollTo(0, 0);
+  }
+
+  let toastTimer = null;
+  function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 3200); }
+
+  /* ---------- Saving ---------- */
+  async function save(coll, id, body) { state.db.set(coll, id, body); }
+  async function del(coll, id) { state.db.del(coll, id); }
+  async function saveCfg(c) { state.db.set("config", "main", { ...c, updated: new Date().toISOString() }); }
+
+  /* ---------- Google Sheet storage ---------- */
+  const hasGas = () => !!(window.google && google.script && google.script.run);
+  function gs(fn, ...args) {
+    return new Promise((resolve, reject) => {
+      google.script.run.withSuccessHandler(resolve).withFailureHandler(e => reject({ message: String((e && e.message) || e) }))[fn](...args);
+    });
+  }
+  function easter(y) {
+    const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3),
+      h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451),
+      mo = Math.floor((h + l - 7 * m + 114) / 31), da = ((h + l - 7 * m + 114) % 31) + 1;
+    return ymd(new Date(y, mo - 1, da));
+  }
+  function belgianHolidays(y) {
+    const e = easter(y);
+    return [[y + "-01-01", "Nieuwjaar"], [addDays(e, 1), "Paasmaandag"], [y + "-05-01", "Dag van de Arbeid"], [addDays(e, 39), "O.L.H.-Hemelvaart"], [addDays(e, 50), "Pinkstermaandag"], [y + "-07-21", "Nationale feestdag"], [y + "-08-15", "O.L.V.-Hemelvaart"], [y + "-11-01", "Allerheiligen"], [y + "-11-11", "Wapenstilstand"], [y + "-12-25", "Kerstmis"]]
+      .map(([date, name]) => ({ id: date, date, name }))
+      // Extra days the employer gives every year (id "e…" = counts as a bijkomende feestdag).
+      .concat([[y + "-07-11", "Vlaamse Feestdag"], [y + "-12-26", "2e Kerstdag"]].map(([date, name]) => ({ id: "e" + date, date, name })));
+  }
+  // Every change goes into an outbox on this device first (kept across reloads), then is sent
+  // to the spreadsheet one by one. A failed send stays in the outbox and is retried.
+  const OUTBOX_KEY = "timeaura-outbox-v1", LOCAL_KEY = "timeaura-local-v1";
+  const clone = o => JSON.parse(JSON.stringify(o));
+  function makeStore(onData, onSync, onLocalChange) {
+    const local = !hasGas();
+    const data = { reg: new Map(), abs: new Map(), hol: new Map(), config: new Map() };
+    const load = k => { try { const v = JSON.parse(localStorage.getItem(k) || "null"); return v; } catch (e) { return null; } };
+    let outbox = local ? [] : (load(OUTBOX_KEY) || []);
+    let flushing = false, retryTimer = null, retryDelay = 5000, sentCount = 0, seq = Date.now();
+    const sync = { pending: 0, flushing: false, error: "" };
+    const saveOutbox = () => { try { localStorage.setItem(OUTBOX_KEY, JSON.stringify(outbox)); } catch (e) {} };
+    const report = () => { sync.pending = outbox.length; sync.flushing = flushing; onSync(sync); };
+    const applyLocal = e => { if (e.op === "set") data[e.coll].set(e.id, clone(e.body)); else data[e.coll].delete(e.id); };
+    const list = coll => [...data[coll]].map(([id, d]) => ({ id, ...d }));
+    const snapshot = () => ({ reg: list("reg"), abs: list("abs"), hol: list("hol"), cfg: data.config.get("main") || null });
+    // For syncing between devices: when each item last changed on this device (meta), and which
+    // items were deleted (tomb). Items without a time (like generated holidays) count as oldest.
+    let holYears = [], meta = {}, tomb = {};
+    const persistLocal = () => { try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ ...snapshot(), holYears, meta, tomb })); } catch (e) {} };
+    const COLLS = ["reg", "abs", "hol", "config"];
+    const allKeys = () => COLLS.flatMap(c => [...data[c].keys()].map(id => c + "/" + id));
+    // The file kept in Google Drive: every item with its time, deleted ones included.
+    function syncDoc() {
+      const docs = {};
+      COLLS.forEach(c => data[c].forEach((body, id) => { docs[c + "/" + id] = { t: meta[c + "/" + id] || 0, body }; }));
+      Object.keys(tomb).forEach(k => { if (!docs[k]) docs[k] = { t: tomb[k], del: true }; });
+      return { app: "TimeAura", v: 1, updated: new Date().toISOString(), holYears, docs };
+    }
+    // Merge what is in Drive with this device: per item the newest change wins.
+    // Returns whether Drive needs the merged result.
+    function mergeRemote(remote) {
+      const rd = (remote && remote.docs) || {}, ld = syncDoc().docs;
+      let localChanged = false, upload = !remote;
+      new Set([...Object.keys(ld), ...Object.keys(rd)]).forEach(k => {
+        const L = ld[k], R = rd[k];
+        if (!R) { upload = true; return; }
+        if (L && (L.t || 0) >= (R.t || 0)) { if ((L.t || 0) > (R.t || 0) || !!L.del !== !!R.del || JSON.stringify(L.body) !== JSON.stringify(R.body)) upload = true; return; }
+        const i = k.indexOf("/"), c = k.slice(0, i), id = k.slice(i + 1);
+        if (!data[c]) return;
+        if (R.del) { if (data[c].has(id)) { data[c].delete(id); localChanged = true; } tomb[k] = R.t; delete meta[k]; }
+        else { data[c].set(id, clone(R.body)); delete tomb[k]; meta[k] = R.t || 0; localChanged = true; }
+      });
+      const rys = (remote && remote.holYears) || [], ys = [...new Set([...holYears, ...rys])];
+      if (ys.length !== rys.length) upload = true;
+      holYears = ys;
+      persistLocal();
+      if (localChanged) onData(snapshot());
+      return { upload, localChanged, doc: syncDoc() };
+    }
+    // Without a spreadsheet the app adds each year's holidays itself, once per year
+    // (so a holiday you delete stays deleted), skipping dates that already have one.
+    const addHolidayYears = () => {
+      const y = new Date().getFullYear(), c = data.config.get("main"), start = c && c.startDate ? +String(c.startDate).slice(0, 4) : y - 1;
+      for (let yy = Math.min(y - 1, start); yy <= y + 1; yy++) {
+        if (holYears.includes(yy)) continue;
+        const ids = new Set(data.hol.keys()), dates = new Set([...data.hol.values()].map(h => h.date));
+        belgianHolidays(yy).forEach(h => {
+          if (/^e/.test(h.id) && c && c.extraDays === false) return;
+          if (!ids.has(h.id) && !dates.has(h.date)) { const { id, ...rest } = h; data.hol.set(id, rest); }
+        });
+        holYears.push(yy);
+      }
+    };
+    const fill = s => {
+      holYears = (s && s.holYears) || []; meta = (s && s.meta) || {}; tomb = (s && s.tomb) || {};
+      const toMap = arr => new Map((arr || []).map(d => { const { id, ...rest } = d; return [id, rest]; }));
+      data.reg = toMap(s.reg); data.abs = toMap(s.abs); data.hol = toMap(s.hol);
+      data.config = new Map(); if (s.cfg) data.config.set("main", s.cfg);
+    };
+
+    async function refresh(attempt) {
+      attempt = attempt || 0;
+      if (local) {
+        const s = load(LOCAL_KEY) || { reg: [], abs: [], hol: [], cfg: null };
+        fill(s); addHolidayYears(); persistLocal(); onData(snapshot()); return;
+      }
+      const before = sentCount;
+      const all = await gs("getAll");
+      if (sentCount !== before && attempt < 3) return refresh(attempt + 1);
+      fill({ reg: all.reg.map(d => ({ id: d.id, ...d.data })), abs: all.abs.map(d => ({ id: d.id, ...d.data })), hol: all.hol.map(d => ({ id: d.id, ...d.data })), cfg: all.config });
+      outbox.forEach(applyLocal);
+      state.sheetUrl = all.sheetUrl;
+      onData(snapshot());
+    }
+
+    async function flush() {
+      if (local || flushing || !outbox.length) { report(); return; }
+      flushing = true; clearTimeout(retryTimer); report();
+      while (outbox.length) {
+        const e = outbox[0];
+        try {
+          if (e.op === "set") await gs("saveDoc", e.coll, e.id, e.coll === "abs" ? { ...e.body, typeLabel: typeOf(e.body.type).label } : e.body);
+          else await gs("deleteDoc", e.coll, e.id);
+        } catch (err) {
+          sync.error = String((err && err.message) || "geen verbinding").replace(/^Error:\s*/, "").slice(0, 160);
+          flushing = false; report();
+          retryTimer = setTimeout(flush, retryDelay); retryDelay = Math.min(retryDelay * 2, 120000);
+          return;
+        }
+        if (outbox[0] && outbox[0].n === e.n) outbox.shift();
+        saveOutbox(); sentCount++; sync.error = ""; retryDelay = 5000;
+      }
+      flushing = false; report();
+    }
+
+    function enqueue(op, coll, id, body) {
+      const entry = { key: coll + "/" + id, op, coll, id, body: body ? clone(body) : null, n: ++seq };
+      applyLocal(entry);
+      if (local) {
+        const now = Date.now(); meta[entry.key] = now;
+        if (op === "del") tomb[entry.key] = now; else delete tomb[entry.key];
+        persistLocal(); onData(snapshot()); if (onLocalChange) onLocalChange(); return;
+      }
+      // Keep one entry per document; a newer change replaces an older one that has not been sent yet.
+      const i = outbox.findIndex(x => x.key === entry.key);
+      if (i > 0 || (i === 0 && !flushing)) outbox.splice(i, 1);
+      outbox.push(entry); saveOutbox();
+      onData(snapshot()); report(); flush();
+    }
+
+    async function importAll(obj) {
+      if (local) {
+        // A restored back-up replaces everything, also on your other devices: it counts as the newest change.
+        const before = allKeys(), keep = { holYears, meta, tomb };
+        fill({ reg: obj.registraties, abs: obj.afwezigheden, hol: obj.feestdagen, cfg: obj.instellingen || null, ...keep });
+        addHolidayYears();
+        const now = Date.now(), after = allKeys();
+        after.forEach(k => { meta[k] = now; delete tomb[k]; });
+        before.filter(k => !after.includes(k)).forEach(k => { tomb[k] = now; delete meta[k]; });
+        persistLocal(); onData(snapshot()); if (onLocalChange) onLocalChange(); return;
+      }
+      outbox = []; saveOutbox(); report();
+      await gs("importAll", obj); await refresh();
+    }
+
+    return {
+      local, refresh, flush, importAll, sync, mergeRemote,
+      set: (coll, id, body) => enqueue("set", coll, id, body),
+      del: (coll, id) => enqueue("del", coll, id, null),
+      retryNow: () => { retryDelay = 5000; clearTimeout(retryTimer); flush(); }
+    };
+  }
+
+  /* ---------- Sync between devices via your own Google Drive (web app only) ---------- */
+  // The hours go to one file in a hidden app folder in your own Drive (scope drive.appdata:
+  // TimeAura cannot see any of your other files). A web page gets access for one hour at a time,
+  // so now and then a tap on "Synchroniseren" is needed; in between it syncs by itself.
+  const CLIENT_ID = WEB ? String(window.TIMEAURA_GOOGLE_CLIENT_ID || "") : "";
+  const SYNC_KEY = "timeaura-sync-v1", DRIVE = "https://www.googleapis.com";
+  const SCOPES = "https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.email";
+  const cloud = { st: {}, token: "", exp: 0, busy: false, err: "", seq: 0, syncedNow: false, timer: null };
+  try { cloud.st = JSON.parse(localStorage.getItem(SYNC_KEY) || "{}") || {}; } catch (e) {}
+  try { const t = JSON.parse(sessionStorage.getItem(SYNC_KEY) || "null"); if (t && t.exp > Date.now()) { cloud.token = t.token; cloud.exp = t.exp; } } catch (e) {}
+  const cloudSave = () => { try { localStorage.setItem(SYNC_KEY, JSON.stringify(cloud.st)); } catch (e) {} };
+  const cloudOn = () => !!(CLIENT_ID && cloud.st.connected);
+  const tokenOk = () => cloud.token && Date.now() < cloud.exp;
+  let gisLoading = null;
+  function loadGis() {
+    if (window.google && google.accounts && google.accounts.oauth2) return Promise.resolve();
+    if (!gisLoading) gisLoading = new Promise((res, rej) => {
+      const s = document.createElement("script"); s.src = "https://accounts.google.com/gsi/client"; s.async = true;
+      s.onload = () => res(); s.onerror = () => { gisLoading = null; rej(new Error("Google is niet bereikbaar. Ben je online?")); };
+      document.head.appendChild(s);
+    });
+    return gisLoading;
+  }
+  async function getToken(interactive) {
+    if (tokenOk()) return;
+    if (!interactive) { const e = new Error("tik nodig"); e.needsTap = true; throw e; }
+    await loadGis();
+    await new Promise((res, rej) => {
+      const tc = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID, scope: SCOPES, prompt: cloud.st.connected ? "" : "consent", login_hint: cloud.st.email || undefined,
+        callback: r => {
+          if (r.error) return rej(new Error(r.error === "access_denied" ? "Je gaf geen toestemming." : r.error));
+          cloud.token = r.access_token; cloud.exp = Date.now() + (Number(r.expires_in || 3600) - 60) * 1000;
+          try { sessionStorage.setItem(SYNC_KEY, JSON.stringify({ token: cloud.token, exp: cloud.exp })); } catch (e) {}
+          res();
+        },
+        error_callback: e => rej(new Error(e && e.type === "popup_closed" ? "Aanmelden afgebroken." : "Het aanmeldvenster kon niet openen. Laat pop-ups toe voor deze site."))
+      });
+      tc.requestAccessToken();
+    });
+  }
+  async function api(url, opts) {
+    const r = await fetch(url, { ...(opts || {}), headers: { ...((opts && opts.headers) || {}), Authorization: "Bearer " + cloud.token } });
+    if (!r.ok) {
+      if (r.status === 401) { cloud.token = ""; cloud.exp = 0; }
+      const e = new Error(r.status === 401 ? "Je Google-toegang is verlopen." : r.status === 403 ? "Google weigert de toegang (" + r.status + ")." : "Google Drive gaf fout " + r.status + "."); e.status = r.status; throw e;
+    }
+    return r.status === 204 ? null : r.json();
+  }
+  async function cloudSync(interactive) {
+    if (!CLIENT_ID || !state.db || cloud.busy) return;
+    if (!cloud.st.connected && !interactive) return;
+    if (!tokenOk() && !interactive) { renderCloud(); return; }
+    if (!navigator.onLine) { cloud.err = "Je bent offline. Je wijzigingen gaan mee zodra je weer online bent."; renderCloud(); return; }
+    cloud.busy = true; cloud.err = ""; renderCloud();
+    const startSeq = cloud.seq;
+    try {
+      await getToken(interactive);
+      if (!cloud.st.email) { const u = await api(DRIVE + "/oauth2/v3/userinfo"); cloud.st.email = u.email || ""; }
+      let id = cloud.st.fileId || "", remote = null;
+      if (id) { try { remote = await api(`${DRIVE}/drive/v3/files/${id}?alt=media`); } catch (e) { if (e.status === 404) id = ""; else throw e; } }
+      if (!id) {
+        const l = await api(`${DRIVE}/drive/v3/files?spaces=appDataFolder&fields=files(id)&q=${encodeURIComponent("name='timeaura.json'")}`);
+        id = (l.files && l.files[0] && l.files[0].id) || "";
+        if (id) remote = await api(`${DRIVE}/drive/v3/files/${id}?alt=media`);
+      }
+      const res = state.db.mergeRemote(remote);
+      if (res.upload) {
+        const body = JSON.stringify(res.doc);
+        if (id) await api(`${DRIVE}/upload/drive/v3/files/${id}?uploadType=media&fields=id`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body });
+        else {
+          const b = "timeaura" + Date.now();
+          const created = await api(`${DRIVE}/upload/drive/v3/files?uploadType=multipart&fields=id`, { method: "POST", headers: { "Content-Type": "multipart/related; boundary=" + b },
+            body: `--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name: "timeaura.json", parents: ["appDataFolder"] })}\r\n--${b}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${b}--` });
+          id = created.id;
+        }
+      }
+      cloud.st = { ...cloud.st, connected: true, fileId: id, lastSync: Date.now() };
+      if (cloud.seq === startSeq) cloud.st.dirty = false;
+      cloud.syncedNow = true;
+      // A successful sync is also a back-up.
+      try { localStorage.setItem(BACKUP_KEY, String(Date.now())); } catch (e) {}
+    } catch (e) {
+      if (!e.needsTap) cloud.err = String((e && e.message) || e).replace(/^Error:\s*/, "");
+    } finally {
+      cloud.busy = false; cloudSave(); renderCloud(); renderBanner();
+      if (state.view === "instellingen") renderCloudCard();
+      if (cloud.st.dirty && tokenOk() && cloud.seq !== startSeq) scheduleSync();
+    }
+  }
+  function scheduleSync() { clearTimeout(cloud.timer); cloud.timer = setTimeout(() => cloudSync(false), 1500); }
+  function onLocalChange() {
+    if (!cloudOn()) return;
+    cloud.seq++; cloud.st.dirty = true; cloudSave();
+    if (tokenOk()) scheduleSync(); else renderCloud();
+  }
+  function cloudDisconnect() {
+    try { if (cloud.token && window.google && google.accounts) google.accounts.oauth2.revoke(cloud.token, () => {}); } catch (e) {}
+    cloud.token = ""; cloud.exp = 0; cloud.st = {}; cloud.err = ""; cloud.syncedNow = false;
+    try { sessionStorage.removeItem(SYNC_KEY); } catch (e) {}
+    cloudSave(); renderCloud(); renderCloudCard(); renderBanner();
+  }
+  const agoText = t => { if (!t) return "nog nooit"; const m = Math.round((Date.now() - t) / 60000); return m < 1 ? "net" : m < 60 ? m + " min geleden" : m < 1440 ? Math.round(m / 60) + " uur geleden" : fmtDate(ymd(new Date(t))); };
+  function renderCloud() {
+    if (!WEB) return;
+    const el = $("#syncPill");
+    if (!cloudOn()) { el.hidden = true; return; }
+    let html = "";
+    if (cloud.busy) html = `<span>Synchroniseren…</span>`;
+    else if (cloud.err) html = `<span>Synchroniseren lukte niet.</span><button type="button" data-cloud-sync>Opnieuw</button><small>${esc(cloud.err)}</small>`;
+    else if (!tokenOk() && (!cloud.syncedNow || cloud.st.dirty)) html = `<span>${cloud.st.dirty ? "Wijzigingen nog niet in je Drive." : "Haal je uren op van je andere toestellen."}</span><button type="button" data-cloud-sync>↻ Synchroniseren</button>`;
+    el.hidden = !html; el.className = "sync-pill" + (cloud.err ? " warn" : ""); el.innerHTML = html;
+  }
+  function renderCloudCard() {
+    const el = $("#cloudCard"); if (!el) return;
+    if (!CLIENT_ID) { el.hidden = true; return; }
+    el.hidden = false;
+    el.innerHTML = `<div class="card-head"><h2>Op al je toestellen</h2></div>
+      ${cloudOn() ? `<p class="explain">Je uren worden bewaard in je eigen Google Drive (<b>${esc(cloud.st.email || "je Google-account")}</b>), in een verborgen map van TimeAura. Open TimeAura op je gsm en je computer met hetzelfde account, dan zie je overal dezelfde uren.</p>
+        <p class="explain" style="margin:0">Laatst gesynchroniseerd: <b>${agoText(cloud.st.lastSync)}</b>${cloud.st.dirty ? " · er zijn nog wijzigingen" : ""}</p>
+        <div class="actions"><button type="button" class="btn small primary" data-cloud-sync>↻ Nu synchroniseren</button><button type="button" class="btn small ghost" id="cloudOff">Loskoppelen</button></div>`
+      : `<p class="explain">Gebruik je TimeAura op je gsm én je computer? Meld je op elk toestel aan met hetzelfde Google-account. Je uren komen dan in je eigen Google Drive, in een verborgen map waar enkel TimeAura bij kan. TimeAura ziet je andere bestanden niet, en niemand anders ziet je uren.</p>
+        <div class="actions"><button type="button" class="btn small primary" data-cloud-sync>Aanmelden met Google</button></div>`}
+      ${cloud.err ? `<p class="form-error">${esc(cloud.err)}</p>` : ""}`;
+    const off = $("#cloudOff");
+    if (off) off.onclick = () => {
+      if (!off.dataset.armed) { off.dataset.armed = "1"; off.textContent = "Tik nogmaals: loskoppelen"; setTimeout(() => { off.dataset.armed = ""; off.textContent = "Loskoppelen"; }, 4000); return; }
+      cloudDisconnect(); toast("Losgekoppeld. Je uren blijven op dit toestel.");
+    };
+  }
+
+  function renderSync(s) {
+    if (WEB) { renderCloud(); return; }
+    const el = $("#syncPill");
+    if (!s.pending) { el.hidden = true; return; }
+    el.hidden = false;
+    const what = s.pending === 1 ? "1 wijziging" : s.pending + " wijzigingen";
+    if (s.error && !s.flushing) {
+      el.className = "sync-pill warn";
+      el.innerHTML = `<span>${what} nog niet in je spreadsheet. TimeAura probeert het opnieuw.</span><button type="button" id="syncRetry">Nu proberen</button><small>${esc(s.error)}</small>`;
+      $("#syncRetry").onclick = () => state.db && state.db.retryNow();
+    } else { el.className = "sync-pill"; el.innerHTML = `<span>${what} bewaren…</span>`; }
+  }
+
+  function onData(snap) {
+    state.reg = snap.reg; state.abs = snap.abs; state.hol = snap.hol; state.cfg = snap.cfg; state.loaded = true;
+    reindex();
+    // Settings hold half-typed values; they re-render only after their own save.
+    if (state.view !== "instellingen" || !viewEl.querySelector("#schedForm")) render();
+    else renderBanner();
+    if (sheetMode && sheetMode.kind === "day") openDay(sheetMode.date);
+  }
+
+  /* ---------- Start ---------- */
+  if (WEB) {
+    // Works offline, and asks the browser not to clear the data when the phone runs low on space.
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  }
+  state.db = makeStore(onData, renderSync, onLocalChange);
+  render();
+  state.db.refresh().catch(e => {
+    viewEl.innerHTML = `<div class="card" style="max-width:560px;margin:40px auto;text-align:center"><h2>Je spreadsheet is niet bereikbaar</h2><p class="explain">${esc((e && e.message) || "Controleer je internetverbinding.")}</p><button class="btn primary" onclick="location.reload()">Opnieuw proberen</button></div>`;
+  });
+  state.db.flush();
+  if (CLIENT_ID) {
+    // Load Google's sign-in script ahead, so a tap on "Synchroniseren" can open its window right away.
+    if (navigator.onLine) loadGis().catch(() => {});
+    setTimeout(() => { renderCloud(); cloudSync(false); }, 300);
+    setInterval(() => { if (document.visibilityState === "visible" && tokenOk()) cloudSync(false); }, 5 * 60000);
+    window.addEventListener("online", () => { if (tokenOk()) cloudSync(false); else renderCloud(); });
+  }
+  // Keep the live counters on "Vandaag" fresh, and pick up changes made elsewhere when you come back.
+  setInterval(() => { if (state.loaded && state.view === "vandaag" && sheetEl.hidden && document.visibilityState === "visible") render(); }, 30000);
+  let lastRefresh = Date.now();
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") return;
+    if (CLIENT_ID) { if (tokenOk()) cloudSync(false); else renderCloud(); }
+    if (Date.now() - lastRefresh < 60000) return;
+    lastRefresh = Date.now();
+    state.db.refresh().then(() => { if (state.view === "instellingen") render(); }).catch(() => {});
+  });
+})();
+</script>
+</body>
+</html>

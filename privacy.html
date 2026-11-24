@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>TimeAura · Privacy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+:root { --bg: #FBF5F2; --surface: #FFFFFF; --ink: #3D2A33; --muted: #806B74; --line: #F1E2DD; --rose: #B95F7E; }
+@media (prefers-color-scheme: dark) { :root { --bg: #1B1418; --surface: #251B21; --ink: #F5E9EE; --muted: #C0AAB4; --line: #3B2C34; --rose: #EA9DB6; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: 24px; }
+h1 { font-family: Georgia, serif; font-weight: 400; font-size: 32px; margin: 0 0 4px; }
+h1 em { color: var(--rose); }
+h2 { font-size: 18px; margin: 28px 0 6px; }
+p, li { color: var(--ink); }
+.muted { color: var(--muted); font-size: 14px; }
+a { color: var(--rose); }
+code { font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <h1>Time<em>Aura</em> · privacy</h1>
+    <p class="muted">Laatst bijgewerkt op 24 november 2026</p>
+
+    <p>TimeAura is een kleine, gratis app om je eigen werktijd bij te houden: in- en uitprikken, je plus/min-saldo, verlof en feestdagen. Hij is gemaakt door een collega, voor collega's. Er zit geen bedrijf, reclame of verdienmodel achter.</p>
+
+    <h2>Welke gegevens</h2>
+    <p>Alleen wat je zelf ingeeft: je werkrooster, je werktijden, afwezigheden (zoals verlof of ziekte), feestdagen, je startsaldo en je verlofrecht. TimeAura vraagt niet naar je naam of andere persoonsgegevens.</p>
+
+    <h2>Waar staan ze</h2>
+    <ul>
+      <li><b>Op je eigen toestel</b>, in de opslag van je browser. Ze worden niet naar een server van TimeAura gestuurd; zo'n server bestaat niet.</li>
+      <li><b>In je eigen Google Drive</b>, alleen als je zelf kiest om te synchroniseren (Instellingen → Op al je toestellen). TimeAura bewaart dan één bestand, <code>timeaura.json</code>, in een verborgen app-map van je Drive. Niemand anders, ook de maker van de app niet, kan daarbij.</li>
+    </ul>
+    <p>Je werkgever ziet niets van wat je in TimeAura bijhoudt.</p>
+
+    <h2>Toegang tot je Google-account</h2>
+    <p>Als je synchroniseert, vraagt TimeAura bij Google alleen deze toegang:</p>
+    <ul>
+      <li><code>drive.appdata</code>: om zijn eigen verborgen map in je Drive te lezen en te schrijven. TimeAura kan je andere bestanden niet zien of aanpassen.</li>
+      <li><code>userinfo.email</code>: om te tonen met welk Google-account je verbonden bent.</li>
+    </ul>
+    <p>Deze gegevens worden alleen gebruikt om je uren tussen je eigen toestellen te synchroniseren. Ze worden niet verkocht, niet gedeeld met anderen en niet gebruikt voor reclame of om modellen te trainen. Het gebruik en de overdracht van gegevens die TimeAura via Google API's ontvangt, volgen de <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API Services User Data Policy</a>, inclusief de vereisten voor beperkt gebruik (Limited Use).</p>
+
+    <h2>Andere diensten</h2>
+    <ul>
+      <li>De app wordt aangeboden via <b>GitHub Pages</b>, en de lettertypes komen van <b>Google Fonts</b>. Zoals bij elke website zien die diensten technische gegevens zoals je IP-adres wanneer je browser de app of de lettertypes ophaalt.</li>
+      <li>Voor het aanmelden en synchroniseren praat je browser rechtstreeks met <b>Google</b>.</li>
+    </ul>
+    <p>TimeAura gebruikt geen cookies voor tracking en geen analysetools.</p>
+
+    <h2>Je gegevens wissen</h2>
+    <ul>
+      <li><b>Op je toestel</b>: verwijder de app, of wis de sitegegevens van deze website in je browser.</li>
+      <li><b>In je Google Drive</b>: kies in TimeAura <b>Loskoppelen</b>. Open daarna Google Drive → Instellingen → <b>Apps beheren</b> → TimeAura → Opties → <b>Verborgen app-gegevens verwijderen</b>.</li>
+      <li><b>Toegang intrekken</b>: via <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>.</li>
+    </ul>
+
+    <h2>Vragen</h2>
+    <p>Heb je een vraag over TimeAura of over deze verklaring? Stel ze aan de collega die je de app bezorgde.</p>
+
+    <p class="muted"><a href="./">← Terug naar TimeAura</a></p>
+  </div>
+</main>
+</body>
+</html>

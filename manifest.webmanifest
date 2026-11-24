@@ -1,0 +1,17 @@
+{
+  "name": "TimeAura",
+  "short_name": "TimeAura",
+  "description": "Je eigen werktijdregistratie: in- en uitprikken, plus/min-saldo, verlof en feestdagen.",
+  "lang": "nl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FBF5F2",
+  "theme_color": "#FBF5F2",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
