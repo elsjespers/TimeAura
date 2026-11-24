@@ -5,7 +5,7 @@
 <title>TimeAura</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FBF5F2">
-<meta name="description" content="Je eigen werktijdregistratie: in- en uitprikken, plus/min-saldo, verlof en feestdagen.">
+<meta name="description" content="Je eigen werktijdregistratie: in- en uittikken, plus/min-saldo, verlof en feestdagen.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -138,6 +138,10 @@ main { padding-block: 24px 120px; }
 .cal-day.today { border-color: var(--rose); font-weight: 600; }
 .cal-day .dots { position: absolute; bottom: 7px; left: 0; right: 0; display: flex; gap: 3px; justify-content: center; }
 .cal-day .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--peach); }
+.cal-day.moved { border: 1px dashed var(--rose); }
+.cal-day.src { background: var(--rose-soft); }
+.cal-day .mv { position: absolute; top: 25px; left: 0; right: 0; font-size: 10px; color: var(--rose); line-height: 1; }
+.cal-legend .mv-key { border: 1px dashed var(--rose); background: transparent !important; border-radius: 3px; width: 9px; height: 9px; }
 .cal-day .dots i.abs { background: var(--mauve); } .cal-day .dots i.hol { background: var(--plus); } .cal-day .dots i.miss { background: var(--min); opacity: .6; }
 .cal-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin: 12px 0 4px; }
 .cal-legend i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
@@ -422,7 +426,7 @@ a.link { color: var(--rose); font-weight: 500; }
 <script>
 (() => {
   "use strict";
-  const APP_VERSION = "2.2 (bestaande instellingen blijven bij aanmelden)";
+  const APP_VERSION = "2.4 (halve dag verplaatsen via de kalender)";
   const $ = s => document.querySelector(s);
   const viewEl = $("#view"), bannerEl = $("#banner");
 
@@ -609,7 +613,7 @@ a.link { color: var(--rose); font-weight: 500; }
   function renderBanner() {
     const run = runningReg(), t = todayStr();
     let html = "";
-    if (run && run.date < t) html = `<div class="banner warn"><p>Je bent op <b>${esc(fmtDate(run.date))}</b> niet uitgeprikt. Die dag telt pas mee als je een einduur invult.</p><button class="btn small primary" data-reg="${esc(run.id)}" data-date="${esc(run.date)}">Einduur invullen</button></div>`;
+    if (run && run.date < t) html = `<div class="banner warn"><p>Je bent op <b>${esc(fmtDate(run.date))}</b> niet uitgetikt. Die dag telt pas mee als je een einduur invult.</p><button class="btn small primary" data-reg="${esc(run.id)}" data-date="${esc(run.date)}">Einduur invullen</button></div>`;
     else if (state.db && state.db.local && !WEB) html = `<div class="banner"><p><b>Voorbeeldmodus.</b> Je gegevens blijven alleen in deze browser. Installeer TimeAura in Google om ze in je spreadsheet te bewaren.</p></div>`;
     else if (WEB && state.loaded && state.cfg && backupDue()) html = `<div class="banner"><p><b>Tijd voor een back-up.</b> Je uren staan alleen op dit toestel. Bewaar af en toe een kopie (bv. in je mail of op OneDrive), dan ben je ze nooit kwijt.</p><button type="button" class="btn small primary" data-backup>Download back-up</button></div>`;
     bannerEl.innerHTML = html;
@@ -663,8 +667,8 @@ a.link { color: var(--rose); font-weight: 500; }
           <p class="today-plan">${plan}</p>
           <div class="punch-wrap">
             <button class="punch ${runToday ? "running" : ""}" id="punchBtn">
-              <span class="punch-label">${runToday ? "Uitprikken" : "Inprikken"}</span>
-              <span class="punch-sub">${runToday ? "ingeprikt om " + esc(run.start) : "het is " + clock(nowMin())}</span>
+              <span class="punch-label">${runToday ? "Uittikken" : "Intikken"}</span>
+              <span class="punch-sub">${runToday ? "ingetikt om " + esc(run.start) : "het is " + clock(nowMin())}</span>
             </button>
             <div class="today-stats">
               <div><span class="eyebrow">Gewerkt</span><b class="num">${hm(i.worked)}</b></div>
@@ -726,10 +730,10 @@ a.link { color: var(--rose); font-weight: 500; }
       const span = regSpan({ ...run, end: now });
       const pause = run.pause || (!others.length && span > c.pauseAfter ? c.pauseDefault : 0);
       await save("reg", run.id, { ...strip(run), end: now, pause });
-      toast(`Uitgeprikt om ${now}${pause && !run.pause ? ` · ${pause} min pauze afgetrokken` : ""}`);
+      toast(`Uitgetikt om ${now}${pause && !run.pause ? ` · ${pause} min pauze afgetrokken` : ""}`);
     } else {
       await save("reg", "r" + uid(), { date: t, start: now, end: "", pause: 0, note: "", created: new Date().toISOString() });
-      toast("Ingeprikt om " + now + ". Fijne werkdag!");
+      toast("Ingetikt om " + now + ". Fijne werkdag!");
     }
   }
   const strip = o => { const { id, ...rest } = o; return rest; };
@@ -994,7 +998,7 @@ a.link { color: var(--rose); font-weight: 500; }
         </div>
         <div class="form-grid">
           <label class="field"><span>2. Een bijkomende feestdag telt voor</span><input class="input num" name="extra" value="${hm(p.extra)}"><small class="muted">Voltijds is dat een hele dag. Deeltijds vaak minder: vraag na bij HR.</small></label>
-          <label class="field"><span>Middagpauze bij in- en uitprikken</span><input class="input num" name="pause" value="30" inputmode="numeric"><small class="muted">minuten, als je meer dan 6 uur aanwezig bent</small></label>
+          <label class="field"><span>Middagpauze bij in- en uittikken</span><input class="input num" name="pause" value="30" inputmode="numeric"><small class="muted">minuten, als je meer dan 6 uur aanwezig bent</small></label>
         </div>
         <label class="chip" style="align-self:start"><input type="checkbox" name="extraDays" checked><span>Ik krijg ook 11 juli en 26 december vrij</span></label>
         <div class="form-grid">
@@ -1027,7 +1031,7 @@ a.link { color: var(--rose); font-weight: 500; }
       await saveCfg({ ...DEFAULT_CFG(), schedules: [{ from: "2000-01-01", days: ds }], fullDay: Math.max(...ds), extraHolidayMin: extra,
         pauseDefault: isNaN(pause) || pause < 0 ? 30 : pause, startDate: f.elements.start.value, startBalance: bal, extraDays }, true);
       try { if (!localStorage.getItem(BACKUP_KEY)) localStorage.setItem(BACKUP_KEY, String(Date.now())); } catch (e) {}
-      toast(CLIENT_ID && !cloudOn() ? "Klaar! Gebruik je ook een ander toestel? Meld je aan bij Instellingen." : "Klaar! Prik in of registreer je eerste dag"); route("vandaag");
+      toast(CLIENT_ID && !cloudOn() ? "Klaar! Gebruik je ook een ander toestel? Meld je aan bij Instellingen." : "Klaar! Tik in of registreer je eerste dag"); route("vandaag");
     };
   }
 
@@ -1035,7 +1039,7 @@ a.link { color: var(--rose); font-weight: 500; }
   const ORDER = [1, 2, 3, 4, 5, 6, 0];
   function renderSettings() {
     const c = cfg(), Y = state.year;
-    state.cfgShown = state.cfg ? state.cfg.updated || "" : "";
+    state.cfgShown = JSON.stringify(state.cfg || null); state.settingsDirty = false;
     const scheds = c.schedules.slice().sort((a, b) => a.from < b.from ? -1 : 1);
     const schedHtml = scheds.map((s, n) => {
       const tot = sum(s.days, x => x || 0);
@@ -1080,7 +1084,7 @@ a.link { color: var(--rose); font-weight: 500; }
               </div>
             </div>
             <div class="settings-section stack">
-              <p class="explain" style="margin:0">Bij in- en uitprikken trekt TimeAura automatisch je pauze af, als je die dag maar één keer in- en uitprikt. Prik je uit voor je lunch, dan telt die tijd vanzelf niet mee.</p>
+              <p class="explain" style="margin:0">Bij in- en uittikken trekt TimeAura automatisch je pauze af, als je die dag maar één keer intikt en uittikt. Tik je uit voor je lunch, dan telt die tijd vanzelf niet mee.</p>
               <div class="form-grid">
                 <label class="field"><span>Pauze (minuten)</span><input class="input num" name="pauseDefault" type="number" min="0" max="240" value="${c.pauseDefault}"></label>
                 <label class="field"><span>Als je langer blijft dan</span><input class="input num" name="pauseAfter" value="${hm(c.pauseAfter)}"></label>
@@ -1141,7 +1145,7 @@ a.link { color: var(--rose); font-weight: 500; }
       const list = readScheds();
       if (list.some(s => s.days.some(isNaN))) { toast("Typ de uren als 7u36 of 7:36"); return; }
       if (list.some(s => !isDate(s.from))) { toast("Kies een datum voor elk nieuw rooster"); return; }
-      await saveCfg({ ...c, schedules: list }); state.settingsMsg = "Rooster bewaard"; render();
+      await saveCfg({ ...cfg(), schedules: list }); state.settingsMsg = "Rooster bewaard"; render();
     };
     $("#addSched").onclick = async () => {
       const from = $("#newSchedFrom").value;
@@ -1150,11 +1154,11 @@ a.link { color: var(--rose); font-weight: 500; }
       if (list.some(s => s.days.some(isNaN))) { toast("Typ de uren als 7u36 of 7:36"); return; }
       const base = scheduleFor(from);
       list.push({ from, days: base.days.slice() });
-      await saveCfg({ ...c, schedules: list }); state.settingsMsg = "Nieuw rooster toegevoegd. Pas de uren aan en bewaar."; render();
+      await saveCfg({ ...cfg(), schedules: list }); state.settingsMsg = "Nieuw rooster toegevoegd. Pas de uren aan en bewaar."; render();
     };
     sf.querySelectorAll("[data-del-sched]").forEach(b => b.onclick = async () => {
       const n = +b.dataset.delSched; const list = readScheds().filter((_, k) => k !== n);
-      await saveCfg({ ...c, schedules: list.some(s => s.days.some(isNaN)) ? scheds.filter((_, k) => k !== n) : list }); state.settingsMsg = "Rooster verwijderd"; render();
+      await saveCfg({ ...cfg(), schedules: list.some(s => s.days.some(isNaN)) ? scheds.filter((_, k) => k !== n) : list }); state.settingsMsg = "Rooster verwijderd"; render();
     });
     $("#baseForm").onsubmit = async e => {
       e.preventDefault(); const f = e.target.elements;
@@ -1165,7 +1169,7 @@ a.link { color: var(--rose); font-weight: 500; }
       if (isNaN(bal)) { toast("Typ je saldo als +2u15 of −1u30"); f.startBalance.focus(); return; }
       if (isNaN(after) || isNaN(full) || full <= 0 || isNaN(pause) || pause < 0) { toast("Controleer de pauze en de lengte van een dag"); return; }
       if (isNaN(extra) || extra < 0) { toast("Typ de uren van een bijkomende feestdag als 6u52"); f.extraHolidayMin.focus(); return; }
-      await saveCfg({ ...c, startDate: f.startDate.value, startBalance: bal, pauseDefault: pause, pauseAfter: after, fullDay: full, extraHolidayMin: extra });
+      await saveCfg({ ...cfg(), startDate: f.startDate.value, startBalance: bal, pauseDefault: pause, pauseAfter: after, fullDay: full, extraHolidayMin: extra });
       state.settingsMsg = "Bewaard"; render();
     };
     $("#ryPrev").onclick = () => { state.year--; render(); };
@@ -1182,8 +1186,8 @@ a.link { color: var(--rose); font-weight: 500; }
       const vdv = f.vd_min.value.trim();
       if (vdv) { const n = parseDur(vdv); if (isNaN(n) || n < 0) bad = true; else yr.vervangdag = { min: n }; }
       if (bad) { toast("Typ de uren als 136u16 of 136:16"); return; }
-      const rights = { ...(c.rights || {}) }; rights[Y] = yr;
-      await saveCfg({ ...c, rights }); state.settingsMsg = "Verlofrecht " + Y + " bewaard"; render();
+      const rights = { ...(cfg().rights || {}) }; rights[Y] = yr;
+      await saveCfg({ ...cfg(), rights }); state.settingsMsg = "Verlofrecht " + Y + " bewaard"; render();
     };
     $("#holForm").onsubmit = async e => {
       e.preventDefault(); const f = e.target.elements;
@@ -1291,17 +1295,21 @@ a.link { color: var(--rose); font-weight: 500; }
       </div>`, { kind: "day", date });
   }
 
-  // Change what one day asks, or swap it with another day of the same week.
-  function openPlan(date) {
+  // Change what one day asks, or swap it with another day: one of the same week, or any date
+  // picked on the calendar (opts.swapWith) when the half day moves to a later week.
+  function openPlan(date, how) {
     const base = baseMin(date), cur = plannedMin(date), changed = overrideOf(date) !== null;
-    const mon = mondayOf(date), others = [];
+    const mon = mondayOf(date), others = [], swapWith = how && how.swapWith && how.swapWith !== date ? how.swapWith : null;
     for (let k = 0; k < 7; k++) { const d = addDays(mon, k); if (d !== date && (k < 5 || plannedMin(d))) others.push(d); }
+    if (swapWith && !others.includes(swapWith)) others.push(swapWith);
+    const chipDay = d => mondayOf(d) === mon ? `${DSHORT[dow(d)]} ${parseD(d).getDate()}` : `${DSHORT[dow(d)]} ${fmtShort(d)}`;
     const opts = [...new Set([cfg().fullDay, ...cfg().schedules.flatMap(s => s.days), 0].filter(x => x !== undefined))].sort((a, b) => b - a);
     showSheet(`${sheetHead("Werktijd van deze dag", fmtDate(date), `<button type="button" class="btn small ghost" data-back-day="${date}">‹ Dag</button>`)}
       <form id="planForm" class="stack" novalidate>
         <p class="explain" style="margin:0">Volgens je rooster moet je op ${DAYS[dow(date)]} <b>${hm(base)}</b> werken.${changed ? ` Voor deze dag staat nu <b>${hm(cur)}</b>.` : ""}</p>
         <div class="field"><span>Verplaats je je halve dag? Wissel met</span>
-          <div class="chips">${others.map(d => `<label class="chip"><input type="radio" name="swap" value="${d}"><span>${DSHORT[dow(d)]} ${parseD(d).getDate()} · ${hm(plannedMin(d))}</span></label>`).join("")}</div>
+          <div class="chips">${others.map(d => `<label class="chip"><input type="radio" name="swap" value="${d}" ${d === swapWith ? "checked" : ""}><span>${chipDay(d)} · ${hm(plannedMin(d))}</span></label>`).join("")}
+            <button type="button" class="btn small soft" data-swap-cal="${date}">📅 Andere datum kiezen…</button></div>
         </div>
         <label class="field"><span>Of vul zelf in hoeveel je deze dag moet werken</span>
           <input class="input num" name="min" value="${hm(cur)}" data-focus>
@@ -1318,17 +1326,24 @@ a.link { color: var(--rose); font-weight: 500; }
     const plan = () => {
       // Returns { date: minutes } for every day that changes.
       const sw = f.querySelector('input[name="swap"]:checked');
-      if (sw) return { [date]: plannedMin(sw.value), [sw.value]: cur };
+      // This day takes the other day's hours; the other day gets what this day asks by your schedule.
+      if (sw) return { [date]: plannedMin(sw.value), [sw.value]: base };
       const m = parseDur(f.elements.min.value);
       return isNaN(m) || m < 0 ? null : { [date]: m };
     };
     const upd = () => {
       const p = plan(), pr = $("#planPreview");
       if (!p) { pr.textContent = "Typ de uren als 7u36 of 3:48."; return; }
-      const week = Array.from({ length: 7 }, (_, k) => addDays(mon, k));
-      const was = sum(week, plannedMin), will = sum(week, d => d in p ? p[d] : plannedMin(d));
+      const weekOf = m => Array.from({ length: 7 }, (_, k) => addDays(m, k));
+      const mons = [...new Set(Object.keys(p).map(mondayOf))].sort();
+      const lines = mons.map(m => {
+        const week = weekOf(m), was = sum(week, plannedMin), will = sum(week, d => d in p ? p[d] : plannedMin(d));
+        const label = mons.length > 1 ? `De week van ${fmtShort(m)}` : "Je week";
+        return was === will ? `${label} blijft ${hm(will)}.` : `${label} wordt ${hm(will)} in plaats van ${hm(was)}.`;
+      });
+      if (mons.length > 1) lines.push("Samen blijft het gelijk: je verplaatst alleen uren.");
       pr.innerHTML = Object.keys(p).sort().map(d => `${DSHORT[dow(d)]} ${fmtShort(d)}: <b>${hm(p[d])}</b>${p[d] === baseMin(d) ? " (zoals je rooster)" : ""}`).join("<br>")
-        + `<br><span class="muted">${was === will ? `Je week blijft ${hm(will)}.` : `Je week wordt ${hm(will)} in plaats van ${hm(was)}.`}</span>`;
+        + `<br><span class="muted">${lines.join("<br>")}</span>`;
     };
     f.querySelectorAll("[data-plan-min]").forEach(b => b.onclick = () => { f.elements.min.value = hm(+b.dataset.planMin); f.querySelectorAll('input[name="swap"]').forEach(r => r.checked = false); upd(); });
     f.elements.min.addEventListener("input", () => { f.querySelectorAll('input[name="swap"]').forEach(r => r.checked = false); upd(); });
@@ -1355,7 +1370,8 @@ a.link { color: var(--rose); font-weight: 500; }
   }
 
   // Month calendar: pick any day, then the day window opens so you can register right away.
-  function openCal(anyDate) {
+  // With swapFor it picks the day to swap that day's hours with (moving a half day to later).
+  function openCal(anyDate, swapFor) {
     const t = todayStr(), mk = anyDate.slice(0, 7), first = mk + "-01";
     const start = mondayOf(first), wk = state.view === "week" ? state.weekOf : null;
     const prev = addDays(first, -1).slice(0, 7) + "-01", next = addDays(first, 32).slice(0, 7) + "-01";
@@ -1367,18 +1383,30 @@ a.link { color: var(--rose); font-weight: 500; }
       if (i.regs.length || i.home) dots.push("work");
       if (i.abs.some(a => a.type !== "thuiswerk")) dots.push("abs");
       if (!dots.length && i.target && d < t && d >= cfg().startDate) dots.push("miss");
-      const cls = ["cal-day", d.slice(0, 7) !== mk ? "out" : "", !i.planned ? "off" : "", d === t ? "today" : "", wk && d >= wk && d < addDays(wk, 7) ? "wk" : ""].filter(Boolean).join(" ");
-      cells.push(`<button type="button" class="${cls}" data-cal-pick="${d}" aria-label="${fmtDate(d)}">${parseD(d).getDate()}<span class="dots">${dots.map(x => `<i class="${x === "work" ? "" : x}"></i>`).join("")}</span></button>`);
+      const moved = overrideOf(d) !== null;
+      const cls = ["cal-day", d.slice(0, 7) !== mk ? "out" : "", !i.planned ? "off" : "", d === t ? "today" : "", wk && !swapFor && d >= wk && d < addDays(wk, 7) ? "wk" : "", moved ? "moved" : "", d === swapFor ? "src" : ""].filter(Boolean).join(" ");
+      const pick = swapFor ? (d === swapFor ? "disabled" : `data-swap-pick="${d}" data-swap-for="${swapFor}"`) : `data-cal-pick="${d}"`;
+      const tip = moved ? ` · werktijd ${hm(i.planned)} in plaats van ${hm(baseMin(d))}` : "";
+      cells.push(`<button type="button" class="${cls}" ${pick} aria-label="${fmtDate(d)}${tip}" title="${fmtDate(d)}${tip}">${parseD(d).getDate()}${moved ? `<small class="mv">${hm(i.planned)}</small>` : ""}<span class="dots">${dots.map(x => `<i class="${x === "work" ? "" : x}"></i>`).join("")}</span></button>`);
     }
-    showSheet(`${sheetHead("Kies een dag", MONTHS[+mk.slice(5) - 1] + " " + mk.slice(0, 4), `<button type="button" class="icon-btn" data-cal="${prev}" aria-label="Vorige maand">‹</button><button type="button" class="icon-btn" data-cal="${next}" aria-label="Volgende maand">›</button>`)}
+    const nav = `<button type="button" class="icon-btn" data-cal="${prev}" aria-label="Vorige maand">‹</button><button type="button" class="icon-btn" data-cal="${next}" aria-label="Volgende maand">›</button>`;
+    const head = swapFor
+      ? sheetHead("Waar gaat je halve dag naartoe?", MONTHS[+mk.slice(5) - 1] + " " + mk.slice(0, 4), `<button type="button" class="btn small ghost" data-plan="${swapFor}">‹ Terug</button>${nav}`)
+        + `<p class="explain">Tik op de dag die in de plaats van <b>${esc(fmtDate(swapFor))}</b> korter wordt. Die twee dagen wisselen dan hun werktijd.</p>`
+      : sheetHead("Kies een dag", MONTHS[+mk.slice(5) - 1] + " " + mk.slice(0, 4), nav);
+    showSheet(`${head}
       <div class="cal-grid">${["ma", "di", "wo", "do", "vr", "za", "zo"].map(x => `<span class="dh">${x}</span>`).join("")}${cells.join("")}</div>
-      <div class="cal-legend"><span><i style="background:var(--peach)"></i>gewerkt</span><span><i style="background:var(--mauve)"></i>afwezig</span><span><i style="background:var(--plus)"></i>feestdag</span><span><i style="background:var(--min);opacity:.6"></i>niets ingevuld</span></div>
+      <div class="cal-legend"><span><i style="background:var(--peach)"></i>gewerkt</span><span><i style="background:var(--mauve)"></i>afwezig</span><span><i style="background:var(--plus)"></i>feestdag</span><span><i style="background:var(--min);opacity:.6"></i>niets ingevuld</span><span><i class="mv-key"></i>werktijd verplaatst</span></div>
       <form class="cal-jump" id="calJump">
         <label class="field"><span>Of kies een datum</span><input class="input" type="date" name="d" value="${anyDate}" required></label>
-        <button class="btn soft" type="submit">Ga</button>
+        <button class="btn soft" type="submit">${swapFor ? "Kies" : "Ga"}</button>
         ${mk !== t.slice(0, 7) ? `<button class="btn ghost" type="button" data-cal="${t}">Vandaag</button>` : ""}
-      </form>`, { kind: "cal", date: anyDate });
-    $("#calJump").onsubmit = e => { e.preventDefault(); const v = e.target.d.value; if (/^\d{4}-\d{2}-\d{2}$/.test(v)) pickDay(v); };
+      </form>`, { kind: "cal", date: anyDate, swapFor: swapFor || null });
+    $("#calJump").onsubmit = e => {
+      e.preventDefault(); const v = e.target.d.value;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return;
+      if (swapFor) { if (v !== swapFor) openPlan(swapFor, { swapWith: v }); } else pickDay(v);
+    };
   }
   function pickDay(d) {
     state.weekOf = mondayOf(d);
@@ -1417,7 +1445,7 @@ a.link { color: var(--rose); font-weight: 500; }
       const el = f.elements, s = toMin(el.start.value), e = toMin(el.end.value), p = Math.max(0, +el.pause.value || 0);
       const pr = $("#regPreview");
       if (s == null) { pr.textContent = "Vul je beginuur in."; return; }
-      if (e == null) { pr.innerHTML = "Zonder einduur blijf je <b>ingeprikt</b>. Je kan later uitprikken op de startpagina."; return; }
+      if (e == null) { pr.innerHTML = "Zonder einduur blijf je <b>ingetikt</b>. Je kan later uittikken op de startpagina."; return; }
       const span = regSpan({ start: el.start.value, end: el.end.value });
       const w = Math.max(0, span - p), pl = plannedMin(el.date.value) || 0;
       pr.innerHTML = `Aanwezig ${hm(span)} − pauze ${p} min = <b>${hm(w)}</b> gewerkt${e < s ? " (tot na middernacht)" : ""}${pl && !others.length ? ` · rooster ${hm(pl)}, verschil <b>${hm(w - pl, true)}</b>` : ""}`;
@@ -1429,7 +1457,7 @@ a.link { color: var(--rose); font-weight: 500; }
       const showErr = m => { err.textContent = m; err.hidden = false; };
       if (!isDate(el.date.value)) return showErr("Kies een datum.");
       if (toMin(el.start.value) == null) return showErr("Vul je beginuur in.");
-      if (!el.end.value) { const run = runningReg(); if (run && (!r || run.id !== r.id)) return showErr(`Je bent al ingeprikt op ${fmtDate(run.date)}. Vul eerst daar een einduur in.`); }
+      if (!el.end.value) { const run = runningReg(); if (run && (!r || run.id !== r.id)) return showErr(`Je bent al ingetikt op ${fmtDate(run.date)}. Vul eerst daar een einduur in.`); }
       const rec = { date: el.date.value, start: el.start.value, end: el.end.value || "", pause: Math.max(0, Math.round(+el.pause.value || 0)), note: el.note.value.trim().slice(0, 200), created: r ? r.created || new Date().toISOString() : new Date().toISOString() };
       await save("reg", r ? r.id : "r" + uid(), rec);
       toast(r ? "Aangepast" : "Werktijd bewaard");
@@ -1560,7 +1588,7 @@ a.link { color: var(--rose); font-weight: 500; }
 
   /* ---------- Clicks & routing ---------- */
   document.addEventListener("click", e => {
-    const el = e.target.closest && e.target.closest("[data-close],[data-back-day],[data-goto-day],[data-plan],[data-cal],[data-cal-pick],[data-vd-hol],[data-home],[data-add-reg],[data-add-abs],[data-reg],[data-abs],[data-day],a[href^='#']");
+    const el = e.target.closest && e.target.closest("[data-close],[data-back-day],[data-goto-day],[data-plan],[data-cal],[data-cal-pick],[data-swap-cal],[data-swap-pick],[data-vd-hol],[data-home],[data-add-reg],[data-add-abs],[data-reg],[data-abs],[data-day],a[href^='#']");
     if (el && el.dataset.home) return homeDay(el.dataset.home);
     const bk = e.target.closest && e.target.closest("[data-backup]"); if (bk) return downloadBackup();
     const cs = e.target.closest && e.target.closest("[data-cloud-sync]"); if (cs) return cloudSync(true);
@@ -1570,7 +1598,9 @@ a.link { color: var(--rose); font-weight: 500; }
     if (el.dataset.backDay) return openDay(el.dataset.backDay);
     if (el.dataset.gotoDay) return openDay(el.dataset.gotoDay);
     if (el.dataset.plan) return openPlan(el.dataset.plan);
-    if (el.dataset.cal) return openCal(el.dataset.cal);
+    if (el.dataset.cal) return openCal(el.dataset.cal, sheetMode && sheetMode.kind === "cal" ? sheetMode.swapFor : null);
+    if (el.dataset.swapCal) return openCal(el.dataset.swapCal, el.dataset.swapCal);
+    if (el.dataset.swapPick) return openPlan(el.dataset.swapFor, { swapWith: el.dataset.swapPick });
     if (el.dataset.calPick) return pickDay(el.dataset.calPick);
     if (el.dataset.vdHol) return openAbs(el.dataset.date || todayStr(), null, { hol: el.dataset.vdHol });
     if (el.hasAttribute("data-add-reg")) return openReg(el.dataset.date || todayStr(), null);
@@ -1608,6 +1638,9 @@ a.link { color: var(--rose); font-weight: 500; }
   // Drive, the settings already in Drive win over these defaults (see mergeRemote).
   async function saveCfg(c, fresh) {
     const body = { ...c, updated: new Date().toISOString() };
+    // Default values that were never stored stay out, so they cannot count as a change (see mergeRemote).
+    const def = DEFAULT_CFG(), cur = state.cfg || {};
+    if (!fresh) Object.keys(body).forEach(k => { if (!(k in cur) && k in def && JSON.stringify(body[k]) === JSON.stringify(def[k])) delete body[k]; });
     if (fresh && WEB) body.fresh = true; else delete body.fresh;
     state.db.set("config", "main", body);
   }
@@ -1654,10 +1687,33 @@ a.link { color: var(--rose); font-weight: 500; }
     const persistLocal = () => { try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ ...snapshot(), holYears, meta, tomb })); } catch (e) {} };
     const COLLS = ["reg", "abs", "hol", "config"];
     const allKeys = () => COLLS.flatMap(c => [...data[c].keys()].map(id => c + "/" + id));
+    // The settings are merged per field (and per year of leave rights, per moved day), so a change
+    // on one device never wipes a different change made on another one. Field times live in
+    // meta under "config/main|<field>".
+    const FLAT = ["rights", "dayOverrides"], FT = "config/main|";
+    const flatCfg = b => {
+      const o = {};
+      Object.keys(b || {}).forEach(k => {
+        if (k === "fresh") return;
+        const v = b[k];
+        if (FLAT.includes(k) && v && typeof v === "object" && !Array.isArray(v)) Object.keys(v).forEach(s => { o[k + "." + s] = v[s]; });
+        else o[k] = v;
+      });
+      return o;
+    };
+    const unflatCfg = o => {
+      const b = {};
+      FLAT.forEach(p => { b[p] = {}; });
+      Object.keys(o).forEach(k => { const i = k.indexOf("."), p = k.slice(0, i); if (i > 0 && FLAT.includes(p)) b[p][k.slice(i + 1)] = o[k]; else b[k] = o[k]; });
+      return b;
+    };
+    const fieldTimes = () => { const f = {}; Object.keys(meta).forEach(k => { if (k.startsWith(FT)) f[k.slice(FT.length)] = meta[k]; }); return f; };
+    const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
     // The file kept in Google Drive: every item with its time, deleted ones included.
     function syncDoc() {
       const docs = {};
       COLLS.forEach(c => data[c].forEach((body, id) => { docs[c + "/" + id] = { t: meta[c + "/" + id] || 0, body }; }));
+      if (docs["config/main"]) docs["config/main"].f = fieldTimes();
       Object.keys(tomb).forEach(k => { if (!docs[k]) docs[k] = { t: tomb[k], del: true }; });
       return { app: "TimeAura", v: 1, updated: new Date().toISOString(), holYears, docs };
     }
@@ -1669,9 +1725,24 @@ a.link { color: var(--rose); font-weight: 500; }
       new Set([...Object.keys(ld), ...Object.keys(rd)]).forEach(k => {
         const L = ld[k], R = rd[k];
         if (!R) { upload = true; return; }
-        // Start-screen settings of a new device never replace real settings that are already in Drive.
-        const freshOverReal = L && !L.del && L.body && L.body.fresh && !R.del && JSON.stringify(L.body) !== JSON.stringify(R.body);
-        if (L && !freshOverReal && (L.t || 0) >= (R.t || 0)) { if ((L.t || 0) > (R.t || 0) || !!L.del !== !!R.del || JSON.stringify(L.body) !== JSON.stringify(R.body)) upload = true; return; }
+        if (k === "config/main" && L && !L.del && !R.del) {
+          // Per field the newest change wins. Start-screen settings of a new device (fresh)
+          // never replace real settings that are already in Drive.
+          const fresh = !!(L.body && L.body.fresh), a = flatCfg(L.body), b = flatCfg(R.body), lf = L.f || {}, rf = R.f || {}, out = {};
+          let changed = fresh;
+          // A side that keeps field times has never seen a field it does not list (time 0);
+          // an older file without field times counts every field at the time of the whole file.
+          const lDef = Object.keys(lf).length ? 0 : (L.t || 0), rDef = Object.keys(rf).length ? 0 : (R.t || 0);
+          new Set([...Object.keys(a), ...Object.keys(b), ...Object.keys(lf), ...Object.keys(rf)]).forEach(f => {
+            const lt = fresh ? -1 : (lf[f] != null ? lf[f] : lDef), rt = rf[f] != null ? rf[f] : rDef;
+            if (rt > lt) { if (b[f] !== undefined) out[f] = b[f]; if (!same(a[f], b[f])) changed = true; meta[FT + f] = rt; }
+            else { if (a[f] !== undefined) out[f] = a[f]; if (lt > rt || !same(a[f], b[f])) upload = true; meta[FT + f] = lt; }
+          });
+          meta[k] = Math.max(L.t || 0, R.t || 0);
+          if (changed) { data.config.set("main", unflatCfg(out)); localChanged = true; }
+          return;
+        }
+        if (L && (L.t || 0) >= (R.t || 0)) { if ((L.t || 0) > (R.t || 0) || !!L.del !== !!R.del || JSON.stringify(L.body) !== JSON.stringify(R.body)) upload = true; return; }
         const i = k.indexOf("/"), c = k.slice(0, i), id = k.slice(i + 1);
         if (!data[c]) return;
         if (R.del) { if (data[c].has(id)) { data[c].delete(id); localChanged = true; } tomb[k] = R.t; delete meta[k]; }
@@ -1742,9 +1813,19 @@ a.link { color: var(--rose); font-weight: 500; }
 
     function enqueue(op, coll, id, body) {
       const entry = { key: coll + "/" + id, op, coll, id, body: body ? clone(body) : null, n: ++seq };
+      const prev = coll === "config" ? data.config.get(id) : null;
       applyLocal(entry);
       if (local) {
-        const now = Date.now(); meta[entry.key] = now;
+        const now = Date.now();
+        if (coll === "config" && op === "set") {
+          // Only the fields that really changed get the new time; the others keep their old one.
+          const oldT = meta[entry.key] || 0, a = flatCfg(prev), b = flatCfg(body);
+          new Set([...Object.keys(a), ...Object.keys(b)]).forEach(f => {
+            if (meta[FT + f] == null) meta[FT + f] = oldT;
+            if (!same(a[f], b[f])) meta[FT + f] = now;
+          });
+        }
+        meta[entry.key] = now;
         if (op === "del") tomb[entry.key] = now; else delete tomb[entry.key];
         persistLocal(); onData(snapshot()); if (onLocalChange) onLocalChange(); return;
       }
@@ -1761,6 +1842,7 @@ a.link { color: var(--rose); font-weight: 500; }
         const before = allKeys(), keep = { holYears, meta, tomb };
         fill({ reg: obj.registraties, abs: obj.afwezigheden, hol: obj.feestdagen, cfg: obj.instellingen || null, ...keep });
         addHolidayYears();
+        Object.keys(meta).forEach(k => { if (k.startsWith(FT)) delete meta[k]; });
         const now = Date.now(), after = allKeys();
         after.forEach(k => { meta[k] = now; delete tomb[k]; });
         before.filter(k => !after.includes(k)).forEach(k => { tomb[k] = now; delete meta[k]; });
@@ -1922,13 +2004,15 @@ a.link { color: var(--rose); font-weight: 500; }
     } else { el.className = "sync-pill"; el.innerHTML = `<span>${what} bewaren…</span>`; }
   }
 
+  viewEl.addEventListener("input", () => { if (state.view === "instellingen") state.settingsDirty = true; });
   function onData(snap) {
     state.reg = snap.reg; state.abs = snap.abs; state.hol = snap.hol; state.cfg = snap.cfg; state.loaded = true;
     reindex();
     // Settings hold half-typed values; they re-render only after their own save,
     // or when the settings themselves changed (e.g. arrived from another device).
-    const cfgStamp = snap.cfg ? snap.cfg.updated || "" : "";
-    if (state.view !== "instellingen" || !viewEl.querySelector("#schedForm") || cfgStamp !== state.cfgShown) render();
+    // While you are typing there, nothing is redrawn under your fingers.
+    const cfgStamp = JSON.stringify(snap.cfg || null);
+    if (state.view !== "instellingen" || !viewEl.querySelector("#schedForm") || (cfgStamp !== state.cfgShown && !state.settingsDirty)) render();
     else renderBanner();
     if (sheetMode && sheetMode.kind === "day") openDay(sheetMode.date);
   }

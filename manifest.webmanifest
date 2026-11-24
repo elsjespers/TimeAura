@@ -1,7 +1,7 @@
 {
   "name": "TimeAura",
   "short_name": "TimeAura",
-  "description": "Je eigen werktijdregistratie: in- en uitprikken, plus/min-saldo, verlof en feestdagen.",
+  "description": "Je eigen werktijdregistratie: in- en uittikken, plus/min-saldo, verlof en feestdagen.",
   "lang": "nl",
   "start_url": "./",
   "scope": "./",
